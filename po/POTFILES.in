@@ -5,4 +5,4 @@ data/io.gitlab.nekocwd.eyeneko.metainfo.xml.in
 data/io.gitlab.nekocwd.eyeneko.gschema.xml
 src/main.vala
 src/window.vala
-src/window.ui
+src/window.blp
