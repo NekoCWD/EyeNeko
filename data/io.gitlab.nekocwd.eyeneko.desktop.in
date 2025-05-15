@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=eyeneko
+Exec=eyeneko
+Icon=io.gitlab.nekocwd.eyeneko
+Terminal=false
+Type=Application
+Categories=Utility;
+Keywords=GTK;
+StartupNotify=true
+DBusActivatable=true

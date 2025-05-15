@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=io.gitlab.nekocwd.eyeneko
+Exec=@bindir@/eyeneko --gapplication-service

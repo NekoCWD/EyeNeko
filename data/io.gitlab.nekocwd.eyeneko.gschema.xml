@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<schemalist gettext-domain="eyeneko">
+	<schema id="io.gitlab.nekocwd.eyeneko" path="/io/gitlab/nekocwd/eyeneko/">
+	</schema>
+</schemalist>
