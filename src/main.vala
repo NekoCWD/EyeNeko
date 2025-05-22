@@ -23,6 +23,7 @@ int main (string[] args) {
     Intl.bind_textdomain_codeset (Config.GETTEXT_PACKAGE, "UTF-8");
     Intl.textdomain (Config.GETTEXT_PACKAGE);
 
+    EyeNeko.Gstreamer.instance.init (ref args);
     var app = new EyeNeko.Application ();
     return app.run (args);
 }

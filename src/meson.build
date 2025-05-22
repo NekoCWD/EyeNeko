@@ -1,13 +1,26 @@
 eyeneko_sources = [
+  icons,
   'main.vala',
   'application.vala',
   'window.vala',
+  'gst.vala',
+  'pipetap_proxy.vala',
+  'auto_focus.vala',
+  'logic/color_correction_filter.vala',
+  'logic/filter.vala',
+  'logic/helpers.vala',
 ]
 
+vapi_dir = meson.current_source_dir() / 'vapi'
+add_project_arguments(['--vapidir', vapi_dir], language: 'vala')
 eyeneko_deps = [
   config_dep,
   dependency('gtk4'),
   dependency('libadwaita-1', version: '>= 1.4'),
+  dependency('gstreamer-1.0'),
+  #  dependency('gstreamer-pbutils-1.0'),
+  dependency('gstreamer-pbutils-1.0'),
+  valac.find_library('encoding-profile-helper', dirs: vapi_dir),
 ]
 
 blueprints = custom_target(

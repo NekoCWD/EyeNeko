@@ -12,6 +12,7 @@ project(
 i18n = import('i18n')
 gnome = import('gnome')
 valac = meson.get_compiler('vala')
+cc = meson.get_compiler('c')
 
 srcdir = meson.project_source_root() / 'src'
 

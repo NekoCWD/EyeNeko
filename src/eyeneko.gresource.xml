@@ -3,5 +3,7 @@
   <gresource prefix="/io/gitlab/nekocwd/eyeneko">
     <file preprocess="xml-stripblanks">window.ui</file>
     <file preprocess="xml-stripblanks">gtk/help-overlay.ui</file>
+    <file>style.css</file>
+    <file>shaders/ccm.glsl</file>
   </gresource>
 </gresources>

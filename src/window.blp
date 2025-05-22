@@ -2,29 +2,246 @@ using Gtk 4.0;
 using Adw 1;
 
 template $EyeNekoWindow: Adw.ApplicationWindow {
+  styles [
+    "osd",
+  ]
+
   title: _("EyeNeko");
   default-width: 800;
   default-height: 600;
 
-  content: Adw.ToolbarView {
-    [top]
-    Adw.HeaderBar {
-      [end]
-      MenuButton {
-        primary: true;
-        icon-name: "open-menu-symbolic";
-        tooltip-text: _("Main Menu");
-        menu-model: primary_menu;
+  content: Gtk.Overlay overlay {
+    child: Gtk.Picture viewfinder {
+      halign: fill;
+      valign: fill;
+      hexpand: true;
+      vexpand: true;
+    };
+  };
+}
+
+Adw.ToolbarView toolbar {
+  styles [
+    "flat",
+  ]
+
+  [top]
+  Adw.HeaderBar {
+    show-title: false;
+
+    [end]
+    MenuButton {
+      primary: true;
+      icon-name: "open-menu-symbolic";
+      tooltip-text: _("Main Menu");
+      menu-model: primary_menu;
+    }
+  }
+
+  [bottom]
+  ActionBar {
+    styles [
+      "osd",
+    ]
+
+    [center]
+    Box {
+      spacing: 12;
+
+      MenuButton profile_btn {
+        styles [
+          "circular",
+          "menu",
+        ]
+
+        Image {
+          icon-name: "encoder-knob-symbolic";
+          pixel-size: 24;
+        }
+
+        width-request: 40;
+        height-request: 40;
+        valign: center;
+      }
+
+      Button {
+        valign: center;
+        halign: end;
+        width-request: 60;
+        height-request: 60;
+
+        Box {
+          halign: center;
+          valign: center;
+          orientation: vertical;
+
+          Image {
+            icon-name: "camera-focus-symbolic";
+            pixel-size: 24;
+          }
+
+          Label focus_label {
+            label: _("100.0");
+          }
+        }
+
+        styles [
+          "circular",
+          "focus-btn",
+        ]
+      }
+
+      Button capture_btn {
+        width-request: 80;
+        height-request: 80;
+
+        Image {
+          icon-name: "emote-love-symbolic";
+          pixel-size: 32;
+        }
+
+        styles [
+          "circular",
+          "capture-btn",
+        ]
+      }
+
+      MenuButton video_source_btn {
+        styles [
+          "circular",
+          "menu",
+        ]
+
+        Image {
+          icon-name: "pick-camera-alt2-symbolic";
+          pixel-size: 24;
+        }
+
+        width-request: 40;
+        height-request: 40;
+        valign: center;
+      }
+
+      Adw.ToggleGroup camera_mode {
+        styles [
+          "round",
+        ]
+
+        valign: center;
+        orientation: vertical;
+        active-name: "photo";
+
+        Adw.Toggle {
+          icon-name: "camera-photo-symbolic";
+          name: "photo";
+        }
+
+        Adw.Toggle {
+          icon-name: "video-camera-symbolic";
+          name: "video";
+        }
       }
     }
+  }
 
-    content: Label label {
-      label: _("Hello, World!");
+  /*CenterBox {
+    halign: fill;
+    hexpand: true;
+    margin-bottom: 0;
+    margin-end: 0;
+    margin-start: 0;
+    height-request: 120;
 
-      styles [
-        "title-1",
-      ]
-    };
+    styles [
+      "toolbar",
+      "osd",
+    ]
+
+    [center]
+    CenterBox {
+      [start]
+      Box {
+        valign: center;
+
+        MenuButton mode_switch {
+          width-request: 80;
+          height-request: 80;
+          margin-end: 24;
+          icon-name: "video-decode-symbolic";
+
+          styles [
+            "circular",
+            "cam-switch-btn",
+          ]
+        }
+
+        MenuButton cam_switch {
+          width-request: 80;
+          height-request: 80;
+          margin-end: 24;
+          icon-name: "cameras-symbolic";
+
+          styles [
+            "circular",
+            "cam-switch-btn",
+          ]
+        }
+      }
+
+      [center]
+      Button capture {
+        valign: center;
+        halign: center;
+        width-request: 120;
+        height-request: 120;
+
+        Image {
+          icon-name: "emote-love-symbolic";
+          pixel-size: 48;
+        }
+
+        styles [
+          "circular",
+          "capture-btn",
+        ]
+      }
+
+      [end]
+      Button focus {
+        valign: center;
+        halign: end;
+        width-request: 80;
+        height-request: 80;
+        margin-start: 24;
+
+        Box {
+          halign: center;
+          valign: center;
+          orientation: vertical;
+
+          Image {
+            icon-name: "camera-focus-symbolic";
+            pixel-size: 32;
+          }
+
+          Label focus_label {
+            label: _("100.0");
+          }
+        }
+
+        styles [
+          "circular",
+          "focus-btn",
+        ]
+      }
+    }
+  }*/
+  content: Label label {
+    label: _("EyeNeko");
+
+    styles [
+      "title-1",
+    ]
   };
 }
 

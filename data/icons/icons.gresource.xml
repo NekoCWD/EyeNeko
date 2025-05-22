@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<gresources>
+  <gresource prefix="/io/gitlab/nekocwd/eyeneko/icons/scalable">
+  <file preprocess="xml-stripblanks">actions/camera-focus-symbolic.svg</file>
+  <file preprocess="xml-stripblanks">actions/cameras-symbolic.svg</file>
+  <file preprocess="xml-stripblanks">actions/video-decode-symbolic.svg</file>
+  <file preprocess="xml-stripblanks">actions/video-camera-symbolic.svg</file>
+  <file preprocess="xml-stripblanks">actions/camera-photo-symbolic.svg</file>
+  <file preprocess="xml-stripblanks">actions/pick-camera-alt2-symbolic.svg</file>
+  <file preprocess="xml-stripblanks">actions/encoder-knob-symbolic.svg</file>
+  </gresource>
+</gresources>
