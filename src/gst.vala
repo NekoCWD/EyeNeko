@@ -141,8 +141,14 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     private void add_enc_profile () {
+        var preset = Gst.ElementFactory.make ("x264enc", "Preset");
+        preset.set_property ("speed-preset", Enum.value ("GstX264EncPreset", "ultrafast"));
+        preset.set_property ("tune", 4);
+        preset.set_property ("bitrate", 2400);
+        ((Gst.Preset) preset).save_preset ("Zero Latency + Speed");
+
         var cp = new Gst.PbUtils.EncodingContainerProfile (null, null, Gst.Caps.from_string ("video/quicktime"), null);
-        var vp = new Gst.PbUtils.EncodingVideoProfile (Gst.Caps.from_string ("video/x-h264"), "Zero Latency", null, 0);
+        var vp = new Gst.PbUtils.EncodingVideoProfile (Gst.Caps.from_string ("video/x-h264"), "Zero Latency + Speed", null, 0);
         var ap = new Gst.PbUtils.EncodingAudioProfile (Gst.Caps.from_string ("audio/x-ac3"), null, null, 0);
         cp.add_profile (vp);
         cp.add_profile (ap);
