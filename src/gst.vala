@@ -1,7 +1,7 @@
 
 public class EyeNeko.Gstreamer : Object {
     public Gst.Element viewfinder;
-    private Gst.Element camerabin;
+    private Gst.Bin camerabin;
     public enum CameraBinMode {
         VIDEO = 2,
         PHOTO = 1,
@@ -43,9 +43,9 @@ public class EyeNeko.Gstreamer : Object {
         return best_cap;
     }
 
-    Gst.Caps get_downscale_caps (Gst.Device device, int max_size) {
+    Gst.Caps get_downscale_caps (Camera camera, int max_size) {
         int w = 0, h = 0;
-        var caps = get_best_caps (device);
+        var caps = get_best_caps (camera.device);
         var struct = caps.get_structure (0).copy ();
         struct.get_int ("width", out w);
         struct.get_int ("height", out h);
@@ -89,6 +89,11 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     public void start_capture () {
+        var time = new DateTime.now ();
+        var formated = time.format ("%Y-%m-%d-%H-%M-%S");
+        var location = @"$formated.$(camerabin_mode==CameraBinMode.VIDEO?"mp4":"png")";
+        message ("Capturing %s", location);
+        camerabin.set_property ("location", location);
         Signal.emit_by_name (camerabin, "start-capture");
     }
 
@@ -96,15 +101,25 @@ public class EyeNeko.Gstreamer : Object {
         Signal.emit_by_name (camerabin, "stop-capture");
     }
 
-    public void set_video_filter (Gst.Caps caps) {
-        var filter = new Gst.Bin ("VideoFilter");
+    public Gst.Bin pipe_elements (string? name = null, ...) {
+        var bin = new Gst.Bin (name);
+        var args = va_list ();
+        Gst.Element prev_elem = null;
+        for (Gst.Element elem = args.arg (); elem != null; elem = args.arg ()) {
+            bin.add (elem);
+            if (prev_elem != null)
+                prev_elem.link (elem);
+            prev_elem = elem;
+        }
+        add_pads_to_bin (ref bin);
+        return bin;
+    }
+
+    public Gst.Bin make_downscale_filter (Camera camera, int max_size) {
         var videoscale = Gst.ElementFactory.make ("videoconvertscale");
         var capsfilt = Gst.ElementFactory.make ("capsfilter");
-        capsfilt.set_property ("caps", caps);
-        filter.add_many (videoscale, capsfilt);
-        videoscale.link_many (capsfilt);
-        add_pads_to_bin (ref filter);
-        camerabin.set_property ("video-filter", filter);
+        capsfilt.set_property ("caps", get_downscale_caps (camera, max_size));
+        return pipe_elements ("Downscale filter", videoscale, capsfilt);
     }
 
     public void start_stream_from (Camera camera) {
@@ -129,42 +144,78 @@ public class EyeNeko.Gstreamer : Object {
 
         var camerasrc_wrapper = Gst.ElementFactory.make ("wrappercamerabinsrc");
         camerasrc_wrapper.set_property ("video-source", camerasrc);
-        camerasrc_wrapper.set_property ("video-source-filter", new Logic.Filters.CCM ("CCM", true, true).element);
+        camerasrc_wrapper.set_property ("video-source-filter",
+                                        pipe_elements ("Camera filter",
+                                                       make_downscale_filter (camera, 640),
+                                                       new Logic.Filters.CCM ("CCM", true, true).element
+        ));
 
         camerabin.set_property ("camera-source", camerasrc_wrapper);
-        set_video_filter (get_downscale_caps (camera.device, 600));
 
         camerabin.set_state (Gst.State.NULL);
+        camerabin.set_state (Gst.State.READY);
 
+        camerabin.set_state (Gst.State.PAUSED);
+        replace_videoencodebin ();
         camerabin.set_state (Gst.State.PLAYING);
         Gst.Debug.bin_to_dot_file ((Gst.Bin) camerabin, Gst.DebugGraphDetails.ALL, camera.name);
     }
 
-    private void add_enc_profile () {
-        var preset = Gst.ElementFactory.make ("x264enc", "Preset");
-        preset.set_property ("speed-preset", Enum.value ("GstX264EncPreset", "ultrafast"));
-        preset.set_property ("tune", 4);
-        preset.set_property ("bitrate", 2400);
-        ((Gst.Preset) preset).save_preset ("Zero Latency + Speed");
+    bool meow = false;
+    public void replace_videoencodebin () {
+        if (meow)
+            return;
+        meow = true;
+        message ("Replacing Encodebin");
+        var capsfilter = (Gst.Element) camerabin.get_child_by_name ("videobin-capsfilter");
+        message ("capsfilter %s", capsfilter == null ? "IS NULL" : "OK");
+        var encodebin = (Gst.Bin) camerabin.get_child_by_name ("video-encodebin");
+        message ("enodebin %s", encodebin == null ? "IS NULL" : "OK");
+        var filesink = (Gst.Element) camerabin.get_child_by_name ("videobin-filesink");
+        message ("filesink %s", filesink == null ? "IS NULL" : "OK");
+        capsfilter.unlink (encodebin);
+        camerabin.remove (encodebin);
 
+        var queue = Gst.ElementFactory.make ("queue");
+        var x264enc = Gst.ElementFactory.make ("x264enc");
+        var h264timestamper = Gst.ElementFactory.make ("h264timestamper");
+        var mux = Gst.ElementFactory.make ("qtmux");
+        encodebin = pipe_elements ("video-encodebin", queue, x264enc, h264timestamper, mux);
+
+
+        camerabin.add (encodebin);
+        capsfilter.link (encodebin);
+        encodebin.link (filesink);
+        message ("Encodebin replaced. Miaw <3");
+    }
+
+    private void add_enc_profile () {
         var cp = new Gst.PbUtils.EncodingContainerProfile (null, null, Gst.Caps.from_string ("video/quicktime"), null);
-        var vp = new Gst.PbUtils.EncodingVideoProfile (Gst.Caps.from_string ("video/x-h264"), "Zero Latency + Speed", null, 0);
-        var ap = new Gst.PbUtils.EncodingAudioProfile (Gst.Caps.from_string ("audio/x-ac3"), null, null, 0);
+        var vp = new Gst.PbUtils.EncodingVideoProfile (Gst.Caps.from_string ("video/x-h264"), null, null, 0);
+        // var ap = new Gst.PbUtils.EncodingAudioProfile (Gst.Caps.from_string ("audio/x-ac3"), null, null, 0);
         cp.add_profile (vp);
-        cp.add_profile (ap);
+        // cp.add_profile (ap);
         camerabin.set_property ("video-profile", cp);
     }
 
     public void init (ref weak string[] args) {
         Gst.init (ref args);
-        viewfinder = Gst.ElementFactory.make ("gtk4paintablesink", "paintablesink");
 
-        camerabin = Gst.ElementFactory.make ("camerabin", "camerabin");
-        camerabin.set_property ("viewfinder-sink", viewfinder);
+        camerabin = (Gst.Bin) Gst.ElementFactory.make ("camerabin", "camerabin");
+        camerabin.set_property ("video-filter", Gst.ElementFactory.make ("videoconvert"));
         camerabin.bind_property ("idle", this, "ready", BindingFlags.SYNC_CREATE);
         this.bind_property ("camerabin-mode", camerabin, "mode");
         add_enc_profile ();
+
         camerabin.bus.add_watch (0, bus_callback);
+    }
+
+    public Gdk.Paintable init_viewfinder () {
+        Gdk.Paintable paintable;
+        viewfinder = Gst.ElementFactory.make ("gtk4paintablesink", "paintablesink");
+        viewfinder.get ("paintable", out paintable);
+        camerabin.set_property ("viewfinder-sink", viewfinder);
+        return paintable;
     }
 
     public static void add_pads_to_bin (ref Gst.Bin bin, bool src = true, bool sink = true) {

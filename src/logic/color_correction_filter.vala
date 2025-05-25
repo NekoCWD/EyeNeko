@@ -1,14 +1,14 @@
 public class EyeNeko.Logic.Filters.CCM : GLFilter {
     public float red_in_red { get; set; default = 1.0f; }
-    public float red_in_green { get; set; default = 0.0f; }
-    public float red_in_blue { get; set; default = 0.0f; }
+    public float red_in_green { get; set; default = 0.1f; }
+    public float red_in_blue { get; set; default = 0.1f; }
 
     public float green_in_red { get; set; default = 0.0f; }
-    public float green_in_green { get; set; default = 1.0f; }
+    public float green_in_green { get; set; default = 0.8f; }
     public float green_in_blue { get; set; default = 0.0f; }
 
-    public float blue_in_red { get; set; default = 0.0f; }
-    public float blue_in_green { get; set; default = 0.0f; }
+    public float blue_in_red { get; set; default = 0.1f; }
+    public float blue_in_green { get; set; default = 0.1f; }
     public float blue_in_blue { get; set; default = 1.0f; }
 
     public CCM (string name = "CCM", bool glupload = false, bool gldownload = false) {

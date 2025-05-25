@@ -71,9 +71,8 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
 
         setup_video_source_changer ();
 
-        Gdk.Paintable paintable;
-        Gstreamer.instance.viewfinder.get ("paintable", out paintable);
-        viewfinder.set_paintable (paintable);
+
+        viewfinder.set_paintable (Gstreamer.instance.init_viewfinder ());
         Gstreamer.instance.start_stream_from (Gstreamer.Camera.get_all ()[0]);
 
 
