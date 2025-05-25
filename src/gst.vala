@@ -95,6 +95,13 @@ public class EyeNeko.Gstreamer : Object {
         message ("Capturing %s", location);
         camerabin.set_property ("location", location);
         Signal.emit_by_name (camerabin, "start-capture");
+        var t = new TimeoutSource.seconds (5);
+        t.set_callback (() => {
+            Gst.Debug.bin_to_dot_file ((Gst.Bin) camerabin, Gst.DebugGraphDetails.ALL, "Capture");
+
+            return false;
+        });
+        t.attach ();
     }
 
     public void stop_capture () {
@@ -156,9 +163,8 @@ public class EyeNeko.Gstreamer : Object {
         camerabin.set_state (Gst.State.READY);
 
         camerabin.set_state (Gst.State.PAUSED);
-        replace_videoencodebin ();
+        // replace_videoencodebin ();
         camerabin.set_state (Gst.State.PLAYING);
-        Gst.Debug.bin_to_dot_file ((Gst.Bin) camerabin, Gst.DebugGraphDetails.ALL, camera.name);
     }
 
     bool meow = false;
@@ -181,6 +187,12 @@ public class EyeNeko.Gstreamer : Object {
         var h264timestamper = Gst.ElementFactory.make ("h264timestamper");
         var mux = Gst.ElementFactory.make ("qtmux");
         encodebin = pipe_elements ("video-encodebin", queue, x264enc, h264timestamper, mux);
+        var audiosrc = Gst.ElementFactory.make ("autoaudiosrc");
+        var audioqueue = Gst.ElementFactory.make ("queue");
+        var audioenc = Gst.ElementFactory.make ("avenc_ac3");
+
+        encodebin.add_many (audiosrc, audioqueue, audioenc);
+        audiosrc.link_many (audioqueue, audioenc, mux);
 
 
         camerabin.add (encodebin);
@@ -192,9 +204,9 @@ public class EyeNeko.Gstreamer : Object {
     private void add_enc_profile () {
         var cp = new Gst.PbUtils.EncodingContainerProfile (null, null, Gst.Caps.from_string ("video/quicktime"), null);
         var vp = new Gst.PbUtils.EncodingVideoProfile (Gst.Caps.from_string ("video/x-h264"), null, null, 0);
-        // var ap = new Gst.PbUtils.EncodingAudioProfile (Gst.Caps.from_string ("audio/x-ac3"), null, null, 0);
+        var ap = new Gst.PbUtils.EncodingAudioProfile (Gst.Caps.from_string ("audio/x-ac3"), null, null, 0);
         cp.add_profile (vp);
-        // cp.add_profile (ap);
+        cp.add_profile (ap);
         camerabin.set_property ("video-profile", cp);
     }
 
