@@ -1,8 +1,9 @@
 public class EyeNeko.Elements.Downscale : Gst.Bin {
-    Gst.Element videoscale = Gst.ElementFactory.make("videoscale");
-    Gst.Element capsfilter = Gst.ElementFactory.make("capsfilter");
+    public Gst.Element videoscale = Gst.ElementFactory.make("videoscale");
+    public Gst.Element capsfilter = Gst.ElementFactory.make("capsfilter");
     Gst.Pad sinkpad;
     Gst.Pad srcpad;
+    public int max_size { get; set; default = 640; }
 
     static construct {
         set_static_metadata(
@@ -28,19 +29,34 @@ public class EyeNeko.Elements.Downscale : Gst.Bin {
     }
 
     static bool sink_event(Gst.Pad pad, Gst.Object? parent, owned Gst.Event event) {
-        message("MEOW MEOW MEOW %s", event.type.get_name());
+        var filter = (Downscale) parent;
         if (event.type == Gst.EventType.CAPS) {
             Gst.Caps caps;
             event.parse_caps(out caps);
             var info = new Gst.Video.Info.with_caps(caps);
-            message("%d %d", info.width, info.height);
+            var old_info = info.copy();
+            var max_dim = int.max(info.width, info.height);
+            if (max_dim > filter.max_size) {
+                double mult = (double) filter.max_size / (double) max_dim;
+                info.width = (int) (info.width * mult);
+                info.height = (int) (info.height * mult);
+            }
+            if (info.width % 2 > 0)
+                info.width++;
+            if (info.height % 2 > 0)
+                info.height++;
+            debug("%dx%d=S=>%dx%d", old_info.width, old_info.height, info.width, info.height);
+            var new_caps = caps.copy();
+            new_caps.set_simple("width", typeof (int), info.width);
+            new_caps.set_simple("height", typeof (int), info.height);
+            filter.capsfilter.set_property("caps", new_caps);
         }
         return pad.event_default(parent, event);
     }
 
-    private bool _query(Gst.Query query) {
-        message("MMM %s", query.type.get_name());
-        return base.query(query);
+    public Downscale() {}
+    public Downscale.to(int max_size) {
+        _max_size = max_size;
     }
 
     construct {
