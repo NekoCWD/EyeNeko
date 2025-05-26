@@ -53,8 +53,6 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         add_action (change_video_source_action);
 
 
-
-
         var sources_menu = new Menu ();
         foreach (var camera in Gstreamer.Camera.get_all ()) {
             var item = new MenuItem (camera.name, null);
@@ -63,6 +61,14 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         }
 
         video_source_btn.set_menu_model (sources_menu);
+
+        Gstreamer.instance.notify["ready"].connect (() => {
+            if (!Gstreamer.instance.ready) {
+                capture_btn.add_css_class ("recording");
+            } else {
+                capture_btn.remove_css_class ("recording");
+            }
+        });
     }
 
     public Window (Gtk.Application app) {

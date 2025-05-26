@@ -1,6 +1,17 @@
+@keyframes rotate {
+    100% {
+        transform: rotate(1turn);
+    }
+}
+.recording.capture-btn {
+    border: 5px dashed red;
+    color: red;
+    animation: rotate 4s linear infinite;
+}
 .capture-btn {
     border: 5px solid white;
 }
+
 .focus-btn {
     color: green;
 }
