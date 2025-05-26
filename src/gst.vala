@@ -43,26 +43,6 @@ public class EyeNeko.Gstreamer : Object {
         return best_cap;
     }
 
-    Gst.Caps get_downscale_caps (Camera camera, int max_size) {
-        int w = 0, h = 0;
-        var caps = get_best_caps (camera.device);
-        var struct = caps.get_structure (0).copy ();
-        struct.get_int ("width", out w);
-        struct.get_int ("height", out h);
-        struct = new Gst.Structure.empty ("video/x-raw");
-        var max_dim = int.max (w, h);
-        double mult = 1;
-        if (max_dim > max_size) {
-            mult = max_size / (double) max_dim;
-        }
-        struct.set ("width", typeof (int), (int) (w * mult));
-        struct.set ("height", typeof (int), (int) (h * mult));
-
-        caps = new Gst.Caps.empty ();
-        caps.append_structure (struct.copy ());
-        return caps;
-    }
-
     public class Camera : Object {
         public string name { owned get { return device.display_name; } }
         public Gst.Device device { get; }
@@ -122,13 +102,6 @@ public class EyeNeko.Gstreamer : Object {
         return bin;
     }
 
-    public Gst.Bin make_downscale_filter (Camera camera, int max_size) {
-        var videoscale = Gst.ElementFactory.make ("videoconvertscale");
-        var capsfilt = Gst.ElementFactory.make ("capsfilter");
-        capsfilt.set_property ("caps", get_downscale_caps (camera, max_size));
-        return pipe_elements ("Downscale filter", videoscale, capsfilt);
-    }
-
     public void start_stream_from (Camera camera) {
         var camerasrc = new Gst.Bin ("CameraSRC");
 
@@ -153,7 +126,7 @@ public class EyeNeko.Gstreamer : Object {
         camerasrc_wrapper.set_property ("video-source", camerasrc);
         camerasrc_wrapper.set_property ("video-source-filter",
                                         pipe_elements ("Camera filter",
-                                                       make_downscale_filter (camera, 640),
+                                                       new Elements.Downscale.to (640),
                                                        new Logic.Filters.CCM ("CCM", true, true).element
         ));
 
