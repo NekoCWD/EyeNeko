@@ -160,45 +160,7 @@ public class EyeNeko.Gstreamer : Object {
         camerabin.set_property ("camera-source", camerasrc_wrapper);
 
         camerabin.set_state (Gst.State.NULL);
-        camerabin.set_state (Gst.State.READY);
-
-        camerabin.set_state (Gst.State.PAUSED);
-        // replace_videoencodebin ();
         camerabin.set_state (Gst.State.PLAYING);
-    }
-
-    bool meow = false;
-    public void replace_videoencodebin () {
-        if (meow)
-            return;
-        meow = true;
-        message ("Replacing Encodebin");
-        var capsfilter = (Gst.Element) camerabin.get_child_by_name ("videobin-capsfilter");
-        message ("capsfilter %s", capsfilter == null ? "IS NULL" : "OK");
-        var encodebin = (Gst.Bin) camerabin.get_child_by_name ("video-encodebin");
-        message ("enodebin %s", encodebin == null ? "IS NULL" : "OK");
-        var filesink = (Gst.Element) camerabin.get_child_by_name ("videobin-filesink");
-        message ("filesink %s", filesink == null ? "IS NULL" : "OK");
-        capsfilter.unlink (encodebin);
-        camerabin.remove (encodebin);
-
-        var queue = Gst.ElementFactory.make ("queue");
-        var x264enc = Gst.ElementFactory.make ("x264enc");
-        var h264timestamper = Gst.ElementFactory.make ("h264timestamper");
-        var mux = Gst.ElementFactory.make ("qtmux");
-        encodebin = pipe_elements ("video-encodebin", queue, x264enc, h264timestamper, mux);
-        var audiosrc = Gst.ElementFactory.make ("autoaudiosrc");
-        var audioqueue = Gst.ElementFactory.make ("queue");
-        var audioenc = Gst.ElementFactory.make ("avenc_ac3");
-
-        encodebin.add_many (audiosrc, audioqueue, audioenc);
-        audiosrc.link_many (audioqueue, audioenc, mux);
-
-
-        camerabin.add (encodebin);
-        capsfilter.link (encodebin);
-        encodebin.link (filesink);
-        message ("Encodebin replaced. Miaw <3");
     }
 
     private void add_enc_profile () {
@@ -214,7 +176,11 @@ public class EyeNeko.Gstreamer : Object {
         Gst.init (ref args);
 
         camerabin = (Gst.Bin) Gst.ElementFactory.make ("camerabin", "camerabin");
-        camerabin.set_property ("video-filter", Gst.ElementFactory.make ("videoconvert"));
+        camerabin.set_property ("video-filter",
+                                pipe_elements ("Video Pipeline",
+                                               Gst.ElementFactory.make ("queue"),
+                                               Gst.ElementFactory.make ("videoconvert"),
+                                               Gst.ElementFactory.make ("x264enc")));
         camerabin.bind_property ("idle", this, "ready", BindingFlags.SYNC_CREATE);
         this.bind_property ("camerabin-mode", camerabin, "mode");
         add_enc_profile ();
