@@ -9,6 +9,7 @@ eyeneko_sources = [
   'logic/color_correction_filter.vala',
   'logic/filter.vala',
   'logic/helpers.vala',
+  'elements/downscale.vala',
 ]
 
 vapi_dir = meson.current_source_dir() / 'vapi'
