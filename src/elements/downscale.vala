@@ -3,7 +3,7 @@ public class EyeNeko.Elements.Downscale : Gst.Bin {
     public Gst.Element capsfilter = Gst.ElementFactory.make("capsfilter");
     Gst.Pad sinkpad;
     Gst.Pad srcpad;
-    public int max_size { get; set; default = 640; }
+    public int max_size { get; set; default = 0; }
 
     static construct {
         set_static_metadata(
@@ -36,7 +36,7 @@ public class EyeNeko.Elements.Downscale : Gst.Bin {
             var info = new Gst.Video.Info.with_caps(caps);
             var old_info = info.copy();
             var max_dim = int.max(info.width, info.height);
-            if (max_dim > filter.max_size) {
+            if (filter.max_size > 0 && max_dim > filter.max_size) {
                 double mult = (double) filter.max_size / (double) max_dim;
                 info.width = (int) (info.width * mult);
                 info.height = (int) (info.height * mult);
