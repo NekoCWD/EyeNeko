@@ -165,7 +165,11 @@ public class EyeNeko.Gstreamer : Object {
                                 pipe_elements ("Video Pipeline",
                                                Gst.ElementFactory.make ("queue"),
                                                Gst.ElementFactory.make ("videoconvert"),
-                                               Gst.ElementFactory.make ("x264enc")));
+                                               Gst.parse_launch (Env.get_variable_or
+                                                                 (
+                                                                  "VIDEO_ENCODE",
+                                                                  "x264enc tune=zerolatency speed-preset=ultrafast bitrate=8192"
+                                                                 ))));
         camerabin.bind_property ("idle", this, "ready", BindingFlags.SYNC_CREATE);
         this.bind_property ("camerabin-mode", camerabin, "mode");
         add_enc_profile ();
