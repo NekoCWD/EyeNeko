@@ -69,9 +69,16 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     public void start_capture () {
+        var home_dir = Environment.get_home_dir ();
+        var file_dir = Path.build_filename (home_dir, camerabin_mode == CameraBinMode.VIDEO ? "Videos" : "Pictures", "EyeNeko");
+        var dir = File.new_for_path (file_dir);
+        if (!dir.query_exists ()) {
+            dir.make_directory ();
+        }
         var time = new DateTime.now ();
         var formated = time.format ("%Y-%m-%d-%H-%M-%S");
-        var location = @"$formated.$(camerabin_mode==CameraBinMode.VIDEO?"mp4":"png")";
+        var filename = @"$formated.$(camerabin_mode==CameraBinMode.VIDEO?"mp4":"jpeg")";
+        var location = Path.build_filename (file_dir, filename);
         message ("Capturing %s", location);
         camerabin.set_property ("location", location);
         Signal.emit_by_name (camerabin, "start-capture");
