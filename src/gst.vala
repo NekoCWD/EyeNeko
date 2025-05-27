@@ -8,6 +8,10 @@ public class EyeNeko.Gstreamer : Object {
     }
     public bool ready { get; set; default = false; }
     public CameraBinMode camerabin_mode { get; set; default = CameraBinMode.PHOTO; }
+    public Camera current_camera = null;
+    public int downscale_video_to = int.parse (Env.get_variable_or ("DOWNSCALE_VIDEO", "640"));
+    public int downscale_photo_to = int.parse (Env.get_variable_or ("DOWNSCALE_PHOTO", "0"));
+
 
     Gst.Caps get_best_caps (Gst.Device device) {
         int max_w = 0;
@@ -110,6 +114,7 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     public void start_stream_from (Camera camera) {
+        current_camera = camera;
         var camerasrc = new Gst.Bin ("CameraSRC");
 
         var src = camera.device.create_element ("camerasrc");
@@ -133,7 +138,7 @@ public class EyeNeko.Gstreamer : Object {
         camerasrc_wrapper.set_property ("video-source", camerasrc);
         camerasrc_wrapper.set_property ("video-source-filter",
                                         pipe_elements ("Camera filter",
-                                                       new Elements.Downscale.to (640),
+                                                       new Elements.Downscale.to (camerabin_mode == CameraBinMode.VIDEO ? downscale_video_to : downscale_photo_to),
                                                        new Logic.Filters.CCM ("CCM", true, true).element
         ));
 
@@ -164,6 +169,9 @@ public class EyeNeko.Gstreamer : Object {
         camerabin.bind_property ("idle", this, "ready", BindingFlags.SYNC_CREATE);
         this.bind_property ("camerabin-mode", camerabin, "mode");
         add_enc_profile ();
+        notify["camerabin-mode"].connect (() => {
+            start_stream_from (current_camera);
+        });
 
         camerabin.bus.add_watch (0, bus_callback);
     }
