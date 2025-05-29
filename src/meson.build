@@ -12,6 +12,7 @@ eyeneko_sources = [
   'elements/bin_base.vala',
   'elements/downscale.vala',
   'elements/focus_analyze.vala',
+  'elements/gl_filter.vala',
 ]
 
 vapi_dir = meson.current_source_dir() / 'vapi'
