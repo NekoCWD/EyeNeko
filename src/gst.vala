@@ -83,7 +83,9 @@ public class EyeNeko.Gstreamer : Object {
                 foreach (var device in pwprovider.get_devices ()) {
                     if (device.has_classes ("Video/Source")) {
                         cameras += new Camera (device);
-                        message ("Camera appended %s:", device.display_name);
+                        var id = Value (typeof (string));
+                        device.get_property ("serial", ref id);
+                        message ("Camera appended %s:", id.get_string ());
                     }
                 }
             }
@@ -127,7 +129,7 @@ public class EyeNeko.Gstreamer : Object {
 
     public void start_stream_from (Camera camera) {
         camerabin.set_state (Gst.State.NULL);
-
+        message ("Stream start");
         current_camera = camera;
         camerasrc_wrapper.set_property
             ("video-source",
@@ -163,9 +165,11 @@ public class EyeNeko.Gstreamer : Object {
                                                        Gst.ElementFactory.make ("glupload"),
                                                        color_correction_matrix,
                                                        downscale,
-                                                       Gst.ElementFactory.make ("gldownload")
+                                                       Gst.ElementFactory.make ("gldownload"),
+                                                       Gst.ElementFactory.make ("videoconvert")
         ));
-        camerabin.set_property ("image-filter", Gst.ElementFactory.make ("queue"));
+        camerabin.set_property ("viewfinder-filter", Gst.ElementFactory.make ("videoconvert"));
+        camerabin.set_property ("image-filter", Gst.ElementFactory.make ("videoconvert"));
 
 
         camerabin.set_property ("video-filter",
@@ -185,7 +189,8 @@ public class EyeNeko.Gstreamer : Object {
 
         notify["camerabin-mode"].connect (() => {
             downscale.max_size = camerabin_mode == CameraBinMode.VIDEO ? downscale_video_to : downscale_photo_to;
-            start_stream_from (current_camera);
+            if (current_camera != null)
+                start_stream_from (current_camera);
         });
 
         camerabin.bus.add_watch (0, bus_callback);

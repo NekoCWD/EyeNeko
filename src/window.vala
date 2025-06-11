@@ -48,7 +48,7 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         });
 
         if (Gstreamer.Camera.get_all ().length > 0)
-            camera_path = Gstreamer.Camera.get_all ()[0].device.get_path_string ();
+            camera_path = Gstreamer.Camera.get_all ()[int.parse (Env.get_variable_or ("CAM_N", "0"))].device.get_path_string ();
 
         var change_video_source_action = new PropertyAction ("change-video-source", this, "camera-path");
         add_action (change_video_source_action);
@@ -77,13 +77,9 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         overlay.add_overlay (toolbar);
 
 
-        setup_video_source_changer ();
-
         viewfinder.set_paintable (Gstreamer.instance.viewfinder_paintable);
-        Gstreamer.instance.start_stream_from (Gstreamer.Camera.get_all ()[0]);
 
         capture_btn.clicked.connect (() => {
-            message ("%d %d", Gstreamer.instance.camerabin_mode, (int) Gstreamer.instance.ready);
             if (Gstreamer.instance.camerabin_mode == Gstreamer.CameraBinMode.VIDEO && !Gstreamer.instance.ready) {
                 Gstreamer.instance.stop_capture ();
             } else {
@@ -103,5 +99,8 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
                     break;
             }
         });
+        camera_mode.active_name = Env.get_variable_or ("CAM_M", "photo");
+
+        setup_video_source_changer ();
     }
 }
