@@ -3,3 +3,24 @@
 Customizable gstreamer-based camera
 
 Mostly made for PostmarketOS phones
+
+## Environment variables:
+  - `CAM_N` = `0` - Int, camera number
+  - `CAM_M` = `photo` - String, camera mod `video` or `photo`
+  - `DOWNSCALE_VIDEO` = `640` - Int, maximum image dimension in video mode (0 to disable downscale)
+  - `DOWNSCALE_PHOTO` = `0` - Int, maximum image dimension in photo mode (0 to disable downscale)
+  - `VIDEO_ENCODE` = `x264enc tune=zerolatency speed-preset=ultrafast bitrate=8192` - String, video encode pipeline
+
+## Project TODO:
+  - [ ] Fix cam/mode switching? (I can't reproduce errors)
+  - [ ] Simplify customization
+    - [ ] Transform environment variables to nice UI
+    - [ ] Fix ColorCorrection hardcode
+      - [ ] Add ColorCorrection setting (UI)
+  - [ ] Add per-camera customization
+  - [ ] Add ability to make settings json import/export
+  - [ ] Add image pipeline customization
+  - [ ] Add image/video container customization
+  - [ ] Add image/video encoding customization
+  - [ ] Add ability to disable sound capture
+  - [ ] Add ability to rotate image
