@@ -1,0 +1,36 @@
+pkgname=eyeneko
+pkgver=0.1.0
+pkgrel=0
+pkgdesc="Cat camera"
+url="https://git.nekocwd.duckdns.org/NekoCWD/pipetap"
+arch="all"
+license="GPL-3.0-only"
+makedepends="
+	cmake
+	desktop-file-utils
+	gettext-dev
+	libadwaita-dev
+	meson
+	vala
+	blueprint-compiler-dev
+	gstreamer-dev
+	gst-plugins-base-dev
+	"
+source=""
+builddir="$srcdir/eyeneko-v$pkgver"
+
+build() {
+	abuild-meson \
+		. output
+	meson compile -C output
+}
+
+check() {
+	meson test --print-errorlogs -C output
+}
+
+package() {
+	DESTDIR="$pkgdir" meson install --no-rebuild -C output
+}
+
+sha512sums=""
