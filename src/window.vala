@@ -27,18 +27,12 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
     [GtkChild]
     private unowned Gtk.Picture viewfinder;
     [GtkChild]
-    private unowned Gtk.Picture focus_overlay;
-    [GtkChild]
     private unowned Gtk.MenuButton video_source_btn;
     [GtkChild]
     private unowned Gtk.Button capture_btn;
     [GtkChild]
     private unowned Adw.ToggleGroup camera_mode;
 
-    [GtkChild]
-    private unowned Gtk.Button focus_btn;
-    [GtkChild]
-    private unowned Gtk.Label focus_label;
 
     public string camera_path { get; set; default = "Unknown"; }
     private void setup_video_source_changer () {
@@ -81,31 +75,12 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
     public Window (Gtk.Application app) {
         Object (application: app);
         overlay.add_overlay (toolbar);
-        overlay.add_overlay (focus_overlay);
 
 
         setup_video_source_changer ();
 
-        Gstreamer.instance.bind_property ("focus-paintable", focus_overlay, "paintable", BindingFlags.SYNC_CREATE);
-
         viewfinder.set_paintable (Gstreamer.instance.viewfinder_paintable);
         Gstreamer.instance.start_stream_from (Gstreamer.Camera.get_all ()[0]);
-        var ec = new Gtk.GestureClick ();
-        overlay.add_controller (ec);
-        ec.pressed.connect ((n, x, y) => {
-            if (!viewfinder.contains (x, y))
-                return;
-            var width = x / viewfinder.get_width ();
-            var height = y / viewfinder.get_height ();
-
-            Gstreamer.instance.focus_analyze.window_hpos = height;
-            Gstreamer.instance.focus_analyze.window_wpos = width;
-        });
-        ec.button = 0;
-
-
-        focus_btn.clicked.connect (AutoFocus.instance.reset_focus);
-        AutoFocus.instance.bind_property ("prev_pos", focus_label, "label", GLib.BindingFlags.SYNC_CREATE, (b, src, ref tgt) => { tgt = "%.1f".printf (src.get_double ()); return true; });
 
         capture_btn.clicked.connect (() => {
             message ("%d %d", Gstreamer.instance.camerabin_mode, (int) Gstreamer.instance.ready);

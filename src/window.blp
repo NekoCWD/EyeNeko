@@ -20,12 +20,6 @@ template $EyeNekoWindow: Adw.ApplicationWindow {
   };
 }
 
-Gtk.Picture focus_overlay {
-  opacity: 0.5;
-  halign: start;
-  valign: start;
-}
-
 Adw.ToolbarView toolbar {
   styles [
     "flat",
@@ -68,33 +62,6 @@ Adw.ToolbarView toolbar {
         width-request: 40;
         height-request: 40;
         valign: center;
-      }
-
-      Button focus_btn {
-        valign: center;
-        halign: end;
-        width-request: 60;
-        height-request: 60;
-
-        Box {
-          halign: center;
-          valign: center;
-          orientation: vertical;
-
-          Image {
-            icon-name: "camera-focus-symbolic";
-            pixel-size: 24;
-          }
-
-          Label focus_label {
-            label: _("100.0");
-          }
-        }
-
-        styles [
-          "circular",
-          "focus-btn",
-        ]
       }
 
       Button capture_btn {

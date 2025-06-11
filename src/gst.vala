@@ -15,11 +15,6 @@ public class EyeNeko.Gstreamer : Object {
             return paintable;
         }
     }
-    public Gdk.Paintable focus_paintable {
-        owned get {
-            return focus_analyze.paintable;
-        }
-    }
 
     // Private elements
     private Gst.Bin camerabin = (Gst.Bin) Gst.ElementFactory.make ("camerabin", "camerabin");
@@ -27,7 +22,6 @@ public class EyeNeko.Gstreamer : Object {
     private Gst.Element viewfinder = Gst.ElementFactory.make ("gtk4paintablesink", "paintablesink");
 
     private Gst.Bin camerasrc_wrapper = (Gst.Bin) Gst.ElementFactory.make ("wrappercamerabinsrc");
-    public Elements.FocusAnalyze focus_analyze = new Elements.FocusAnalyze ();
     private Elements.ColorCorrectionMatrix color_correction_matrix = new Elements.ColorCorrectionMatrix ();
     private Elements.Downscale downscale = new Elements.Downscale ();
 
@@ -165,7 +159,6 @@ public class EyeNeko.Gstreamer : Object {
 
         camerasrc_wrapper.set_property ("video-source-filter",
                                         pipe_elements ("Camera Processing",
-                                                       focus_analyze,
                                                        Gst.ElementFactory.make ("glupload"),
                                                        color_correction_matrix,
                                                        downscale
