@@ -4,7 +4,6 @@ eyeneko_sources = [
   'application.vala',
   'window.vala',
   'gst.vala',
-  'pipetap_proxy.vala',
   'logic/helpers.vala',
   'elements/bin_base.vala',
   'elements/camerasrc.vala',

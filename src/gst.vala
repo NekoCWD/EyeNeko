@@ -159,19 +159,17 @@ public class EyeNeko.Gstreamer : Object {
 
         camerasrc_wrapper.set_property ("video-source-filter",
                                         pipe_elements ("Camera Processing",
+                                                       Gst.ElementFactory.make ("videoconvert"),
                                                        Gst.ElementFactory.make ("glupload"),
                                                        color_correction_matrix,
-                                                       downscale
+                                                       downscale,
+                                                       Gst.ElementFactory.make ("gldownload")
         ));
+        camerabin.set_property ("image-filter", Gst.ElementFactory.make ("queue"));
 
-        camerabin.set_property ("image-filter",
-                                pipe_elements ("Image Processing",
-                                               Gst.ElementFactory.make ("gldownload")
-        ));
 
         camerabin.set_property ("video-filter",
                                 pipe_elements ("Video Processing",
-                                               Gst.ElementFactory.make ("gldownload"),
                                                Gst.ElementFactory.make ("queue"),
                                                Gst.ElementFactory.make ("videoconvert"),
                                                Gst.parse_launch (Env.get_variable_or
