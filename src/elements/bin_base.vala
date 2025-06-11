@@ -39,10 +39,14 @@ public class EyeNeko.Elements.BinBase : Gst.Bin {
         });
     }
 
-    protected void add_pads(Gst.Element sink, Gst.Element src) {
-        sinkpad = new Gst.GhostPad("sink", sink.get_static_pad("sink"));
-        add_pad(sinkpad);
-        srcpad = new Gst.GhostPad("src", src.get_static_pad("src"));
-        add_pad(srcpad);
+    protected void add_pads(Gst.Element? sink, Gst.Element? src) {
+        if (sink != null) {
+            sinkpad = new Gst.GhostPad("sink", sink.get_static_pad("sink"));
+            add_pad(sinkpad);
+        }
+        if (src != null) {
+            srcpad = new Gst.GhostPad("src", src.get_static_pad("src"));
+            add_pad(srcpad);
+        }
     }
 }

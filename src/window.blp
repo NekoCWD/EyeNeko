@@ -13,11 +13,17 @@ template $EyeNekoWindow: Adw.ApplicationWindow {
   content: Gtk.Overlay overlay {
     child: Gtk.Picture viewfinder {
       halign: fill;
-      valign: fill;
+      valign: start;
       hexpand: true;
       vexpand: true;
     };
   };
+}
+
+Gtk.Picture focus_overlay {
+  opacity: 0.5;
+  halign: start;
+  valign: start;
 }
 
 Adw.ToolbarView toolbar {
@@ -64,7 +70,7 @@ Adw.ToolbarView toolbar {
         valign: center;
       }
 
-      Button {
+      Button focus_btn {
         valign: center;
         halign: end;
         width-request: 60;

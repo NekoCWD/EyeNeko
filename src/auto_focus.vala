@@ -29,7 +29,7 @@ public class AutoFocus : Object {
 
     public void adjust_step (double prev_score) {
         // message ("%lf < %lf < %lf : %lf %lf / %lf", best_lens_pos, prev_pos, max_pos, step, prev_score, best_score);
-        if (fc < Environment.get_variable ("FRAME_DELAY").to_int ()) {
+        if (fc < EyeNeko.Env.get_variable_or ("FRAME_DELAY", "3").to_int ()) {
             fc++;
             return;
         } else
@@ -51,8 +51,14 @@ public class AutoFocus : Object {
                 break;
             case 20:
                 message ("meow on 2");
-                step = 0.1;
+                step = 0.5;
                 set_diff (2);
+                set_camfocus (prev_pos);
+                break;
+            case 5:
+                message ("meow on 0.5");
+                step = 0.1;
+                set_diff (1);
                 set_camfocus (prev_pos);
                 break;
             case 1:
@@ -83,5 +89,14 @@ public class AutoFocus : Object {
         }
         prev_pos += step;
         set_camfocus (prev_pos);
+    }
+
+    private static AutoFocus _instance = null;
+    public static AutoFocus instance {
+        get {
+            if (_instance == null)
+                _instance = new AutoFocus ();
+            return _instance;
+        }
     }
 }
