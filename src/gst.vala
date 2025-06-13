@@ -152,12 +152,8 @@ public class EyeNeko.Gstreamer : Object {
         camerabin.set_property ("camera-source", camerasrc_wrapper);
         camerabin.set_property ("viewfinder-sink", viewfinder);
         color_correction_matrix.red_in_red = 1f;
-        color_correction_matrix.red_in_blue = 0.1f;
-        color_correction_matrix.red_in_green = 0.1f;
-        color_correction_matrix.blue_in_red = 0.1f;
         color_correction_matrix.blue_in_blue = 1f;
-        color_correction_matrix.blue_in_green = 0.1f;
-        color_correction_matrix.green_in_green = 0.8f;
+        color_correction_matrix.green_in_green = 0.9f;
 
         camerasrc_wrapper.set_property ("video-source-filter",
                                         pipe_elements ("Camera Processing",
