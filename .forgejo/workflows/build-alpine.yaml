@@ -5,18 +5,32 @@ on:
   workflow_dispatch:
 
 jobs:
+  prepare:
+    name: Prepare
+    runs-on: Pmbootstrap
+    outputs:
+      time: ${{ steps.time.outputs.time }}
+    steps:
+      - name: Set start Time
+        id: time
+        shell: sh
+        run: echo time=$(date +"%Y%m%d%H%M%S") >> $GITHUB_OUTPUT
+      - name: Update pmbootstrap
+        uses: actions/pmbootstrap-update@master
+
   build:
+    name: Build for ${{ matrix.info.arch }}
     runs-on: Pmbootstrap
     strategy:
       matrix:
         info:
-          - arch: aarch64
           - arch: x86_64
-    name: Build for ${{ matrix.info.arch }}
+          - arch: aarch64
+    needs: prepare
     steps:
       - name: Check out repository code
         uses: actions/checkout@v4
-      - name: Build package
+      - name: Build packages
         id: build
         uses: actions/pmbootstrap-build@main
         with:
@@ -24,6 +38,7 @@ jobs:
           aports: ${{github.workspace}}/package/alpine
           arch: ${{ matrix.info.arch }}
           src: ${{github.workspace}}
+          time: ${{ needs.prepare.outputs.time }}
       - name: "Upload packages"
         uses: actions/upload-alpine-package@main
         with:
