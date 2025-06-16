@@ -49,15 +49,21 @@ public class EyeNeko.Application : Adw.Application {
     }
 
     private void on_about_action () {
-        string[] developers = { "Vasiliy Doylov (NekoCWD) <nekocwd@mainlining.org>" };
+        string[] developers = {
+            "Vasiliy Doylov (NekoCWD) <nekocwd@mainlining.org>",
+        };
+        string[] artists = {
+        };
         var about = new Adw.AboutDialog () {
             application_name = "EyeNeko",
             application_icon = "io.gitlab.nekocwd.eyeneko",
             developer_name = "NekoCWD",
             translator_credits = _("translator-credits"),
-            version = "0.1.0",
+            version = Config.PACKAGE_VERSION,
             developers = developers,
-            copyright = "© 2025 Vasiliy Doylov <nekocwd@mainlining.org>",
+            copyright = "© 2025 Vasiliy Doylov nekocwd@mainlining.org",
+            website = "https://git.nekocwd.duckdns.org/NekoCWD/EyeNeko",
+            artists = artists,
         };
 
         about.present (this.active_window);
