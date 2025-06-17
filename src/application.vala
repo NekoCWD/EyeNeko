@@ -53,6 +53,7 @@ public class EyeNeko.Application : Adw.Application {
             "Vasiliy Doylov (NekoCWD) <nekocwd@mainlining.org>",
         };
         string[] artists = {
+            "Jaymz665 <jaymz665@gmail.com>",
         };
         var about = new Adw.AboutDialog () {
             application_name = "EyeNeko",
