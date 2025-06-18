@@ -10,7 +10,8 @@ Mostly made for PostmarketOS phones
   - `DOWNSCALE_VIDEO` = `640` - Int, maximum image dimension in video mode (0 to disable downscale)
   - `DOWNSCALE_PHOTO` = `0` - Int, maximum image dimension in photo mode (0 to disable downscale)
   - `VIDEO_ENCODE` = `x264enc tune=zerolatency speed-preset=ultrafast bitrate=8192` - String, video encode pipeline
-
+  - `AUDIO_ENABLED` = `true` - Bool, is audio record enabled (`false` to disable)
+  - `AUDIO_PROFILE` = `audio/x-ac3` - String - audio encoding
 ## Project TODO:
   - [ ] Fix cam/mode switching? (I can't reproduce errors)
   - [ ] Simplify customization

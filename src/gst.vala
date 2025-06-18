@@ -141,9 +141,11 @@ public class EyeNeko.Gstreamer : Object {
     private void add_enc_profile () {
         var cp = new Gst.PbUtils.EncodingContainerProfile (null, null, Gst.Caps.from_string ("video/quicktime"), null);
         var vp = new Gst.PbUtils.EncodingVideoProfile (Gst.Caps.from_string ("video/x-h264"), null, null, 0);
-        var ap = new Gst.PbUtils.EncodingAudioProfile (Gst.Caps.from_string ("audio/x-ac3"), null, null, 0);
+        if (bool.parse (Env.get_variable_or ("AUDIO_ENABLED", "true"))) {
+            var ap = new Gst.PbUtils.EncodingAudioProfile (Gst.Caps.from_string (Env.get_variable_or ("AUDIO_PROFILE", "audio/x-ac3")), null, null, 0);
+            cp.add_profile (ap);
+        }
         cp.add_profile (vp);
-        cp.add_profile (ap);
         camerabin.set_property ("video-profile", cp);
     }
 
