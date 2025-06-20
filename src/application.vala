@@ -54,6 +54,7 @@ public class EyeNeko.Application : Adw.Application {
         };
         string[] artists = {
             "Jaymz665 <jaymz665@gmail.com>",
+            "Soupborsh",
         };
         var about = new Adw.AboutDialog () {
             application_name = "EyeNeko",
