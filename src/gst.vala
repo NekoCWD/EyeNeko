@@ -8,14 +8,6 @@ public class EyeNeko.Gstreamer : Object {
     public bool ready { get; set; default = false; }
     public CameraBinMode camerabin_mode { get; set; default = CameraBinMode.PHOTO; }
 
-    public Gdk.Paintable viewfinder_paintable {
-        owned get {
-            Gdk.Paintable paintable;
-            viewfinder.get ("paintable", out paintable);
-            return paintable;
-        }
-    }
-
     // Private elements
     private Gst.Bin camerabin = (Gst.Bin) Gst.ElementFactory.make ("camerabin", "camerabin");
 
@@ -31,6 +23,7 @@ public class EyeNeko.Gstreamer : Object {
     public int downscale_photo_to = int.parse (Env.get_variable_or ("DOWNSCALE_PHOTO", "0"));
     public delegate int SelectStreamCB (Gst.Element decodebin, Gst.StreamCollection collection, Gst.Stream stream, void* userdata);
 
+    public Gdk.Paintable viewfinder_paintable { get; set; }
 
     Gst.Caps get_best_caps (Gst.Device device) {
         int max_w = 0;
@@ -149,8 +142,7 @@ public class EyeNeko.Gstreamer : Object {
         camerabin.set_property ("video-profile", cp);
     }
 
-    public void init (ref weak string[] args) {
-        Gst.init (ref args);
+    public void init () {
         camerabin.set_property ("camera-source", camerasrc_wrapper);
         camerabin.set_property ("viewfinder-sink", viewfinder);
         color_correction_matrix.red_in_red = 1f;
@@ -191,6 +183,8 @@ public class EyeNeko.Gstreamer : Object {
                 start_stream_from (current_camera);
         });
 
+        viewfinder.bind_property ("paintable", this, "viewfinder-paintable", GLib.BindingFlags.SYNC_CREATE);
+
         camerabin.bus.add_watch (0, bus_callback);
     }
 
@@ -218,6 +212,7 @@ public class EyeNeko.Gstreamer : Object {
             Gst.State pending;
             message.parse_state_changed (out oldstate, out newstate,
                                          out pending);
+
             /*
                GLib.message ("state changed: %s->%s:%s\n",
                           oldstate.to_string (), newstate.to_string (),
@@ -245,8 +240,11 @@ public class EyeNeko.Gstreamer : Object {
         }
     }
 
+    static string[] gst_args = {};
     static construct {
-        unowned string[] ? gst_args = null;
-        Gst.init (ref gst_args);
+        unowned var a = gst_args;
+        Gst.init (ref a);
+
+        instance.init ();
     }
 }

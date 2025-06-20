@@ -76,9 +76,7 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         Object (application: app);
         overlay.add_overlay (toolbar);
 
-
-        viewfinder.set_paintable (Gstreamer.instance.viewfinder_paintable);
-
+        Gstreamer.instance.bind_property ("viewfinder-paintable", viewfinder, "paintable", BindingFlags.SYNC_CREATE);
         capture_btn.clicked.connect (() => {
             if (Gstreamer.instance.camerabin_mode == Gstreamer.CameraBinMode.VIDEO && !Gstreamer.instance.ready) {
                 Gstreamer.instance.stop_capture ();
