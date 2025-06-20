@@ -18,7 +18,13 @@ makedepends="
 	"
 source=""
 builddir="$srcdir/eyeneko-v$pkgver"
-
+depends="
+    gst-plugins-rs-gtk4
+    gst-plugins-ugly
+    gst-plugins-good
+    gst-plugins-base
+    gst-plugins-bad
+"
 build() {
 	abuild-meson \
 		. output
