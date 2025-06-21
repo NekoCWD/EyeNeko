@@ -1,6 +1,6 @@
 namespace EyeNeko {
     public class FriendlyCaps : Object {
-        public unowned Gst.Structure struct { get;  construct  set; }
+        public Gst.Caps caps { get;  construct set; }
         public enum Format {
             RAW,
             JPEG,
@@ -35,12 +35,12 @@ namespace EyeNeko {
         public string pixelformat { get; default = ""; }
 
         construct {
-            struct.get_int ("width", out _width);
-            struct.get_int ("height", out _height);
-            _format_name = struct.get_name ();
+            caps.get_structure (0).get_int ("width", out _width);
+            caps.get_structure (0).get_int ("height", out _height);
+            _format_name = caps.get_structure (0).get_name ();
             _format = Format.from_gst_name (format_name);
-            _pixelformat = struct.get_string ("format"); int num, denom;
-            struct.get_fraction ("framerate", out num, out denom);
+            _pixelformat = caps.get_structure (0).get_string ("format"); int num, denom;
+            caps.get_structure (0).get_fraction ("framerate", out num, out denom);
             if (denom == 0)
                 denom = 1;
             _fps = num / denom;
@@ -51,11 +51,7 @@ namespace EyeNeko {
                 warning ("Unsupported caps structute count (%u)", caps.get_size ());
                 return;
             }
-            Object (struct : caps.get_structure (0).copy ());
-        }
-
-        public FriendlyCaps.with_struct (Gst.Structure struct) {
-            Object (struct : struct);
+            Object (caps: caps);
         }
 
         public string to_string () {
@@ -80,9 +76,7 @@ namespace EyeNeko {
         }
 
         public Gst.Caps to_caps () {
-            var res = new Gst.Caps.empty ();
-            res.append_structure (struct.copy ());
-            return res;
+            return caps.copy ();
         }
     }
 }

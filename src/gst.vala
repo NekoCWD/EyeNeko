@@ -31,8 +31,10 @@ public class EyeNeko.Gstreamer : Object {
         can_start_stream = false;
         available_caps.remove_all ();
         for (uint i = 0; i < caps.get_size (); i++) {
-            var cap = new FriendlyCaps.with_struct (caps.get_structure (i));
-            available_caps.append (cap);
+            var cap = new Gst.Caps.empty ();
+            cap.append_structure (caps.get_structure (i).copy ());
+            var fcap = new FriendlyCaps.with_caps (cap);
+            available_caps.append (fcap);
         }
         can_start_stream = true;
         caps_selecton_model.selected = 0;
