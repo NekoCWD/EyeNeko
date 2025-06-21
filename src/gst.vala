@@ -131,7 +131,10 @@ public class EyeNeko.Gstreamer : Object {
         camerasrc_wrapper.set_property
             ("video-source",
             new Elements.CameraSrc (camera.device.create_element (null),
-                                    get_best_caps (camera.device)));
+                                    Gst.Caps.from_string (
+                                                          Env.get_variable_or ("CAM_CAPS",
+                                                                               get_best_caps (camera.device).to_string ()
+            ))));
         camerabin.set_state (Gst.State.PLAYING);
     }
 

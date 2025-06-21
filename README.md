@@ -12,6 +12,7 @@ Mostly made for PostmarketOS phones
   - `VIDEO_ENCODE` = `x264enc tune=zerolatency speed-preset=ultrafast bitrate=8192` - String, video encode pipeline
   - `AUDIO_ENABLED` = `true` - Bool, is audio record enabled (`false` to disable)
   - `AUDIO_PROFILE` = `audio/x-ac3` - String - audio encoding
+  - `CAM_CAPS` = auto max caps by default - String
 ## Project TODO:
   - [ ] Fix cam/mode switching? (I can't reproduce errors)
   - [ ] Simplify customization
