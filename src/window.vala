@@ -37,14 +37,14 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
     public string camera_path { get; set; default = "Unknown"; }
     private void setup_video_source_changer () {
         notify["camera-path"].connect (() => {
-            message ("Camera switching P0: retrived camera path: %s", camera_path);
             foreach (var camera in Gstreamer.Camera.get_all ()) {
                 if (camera.device.get_path_string () == camera_path) {
-                    message ("Camera switching P1: camera found by path: %s", camera.name);
+                    message ("Switching to: %s", camera.name);
                     Gstreamer.instance.start_stream_from (camera);
                     return;
                 }
             }
+            warning ("Camera switching: Camera not found: %s", camera_path);
         });
 
         if (Gstreamer.Camera.get_all ().length > 0)
@@ -100,5 +100,9 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         camera_mode.active_name = Env.get_variable_or ("CAM_M", "photo");
 
         setup_video_source_changer ();
+        close_request.connect (() => {
+            Gstreamer.instance.start_stream_from (null);
+            return false;
+        });
     }
 }

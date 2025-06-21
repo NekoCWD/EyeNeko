@@ -4,26 +4,24 @@ public class EyeNeko.Gstreamer : Object {
         VIDEO = 2,
         PHOTO = 1,
     }
+
     // Public properties
     public bool ready { get; set; default = false; }
     public CameraBinMode camerabin_mode { get; set; default = CameraBinMode.PHOTO; }
+    public Gdk.Paintable viewfinder_paintable { get; set; }
 
     // Private elements
     private Gst.Bin camerabin = (Gst.Bin) Gst.ElementFactory.make ("camerabin", "camerabin");
-
     private Gst.Element viewfinder = Gst.ElementFactory.make ("gtk4paintablesink", "paintablesink");
-
     private Gst.Bin camerasrc_wrapper = (Gst.Bin) Gst.ElementFactory.make ("wrappercamerabinsrc");
     private Elements.ColorCorrectionMatrix color_correction_matrix = new Elements.ColorCorrectionMatrix ();
     private Elements.Downscale downscale = new Elements.Downscale ();
 
-
+    // Other Fields
     public Camera current_camera = null;
     public int downscale_video_to = int.parse (Env.get_variable_or ("DOWNSCALE_VIDEO", "640"));
     public int downscale_photo_to = int.parse (Env.get_variable_or ("DOWNSCALE_PHOTO", "0"));
-    public delegate int SelectStreamCB (Gst.Element decodebin, Gst.StreamCollection collection, Gst.Stream stream, void* userdata);
 
-    public Gdk.Paintable viewfinder_paintable { get; set; }
 
     Gst.Caps get_best_caps (Gst.Device device) {
         int max_w = 0;
@@ -55,7 +53,8 @@ public class EyeNeko.Gstreamer : Object {
         }
         var best_cap = new Gst.Caps.empty ();
         best_cap.append_structure (max_caps.copy ());
-        message ("%s %dx%d %f (%s)", max_format, max_w, max_h, max_fps, best_cap.to_string ());
+        message ("Camera caps: %dx%d %.0f FPS (%s)", max_w, max_h, max_fps, max_format);
+        info ("Full: %s", best_cap.to_string ());
         return best_cap;
     }
 
@@ -77,8 +76,7 @@ public class EyeNeko.Gstreamer : Object {
                     if (device.has_classes ("Video/Source")) {
                         cameras += new Camera (device);
                         var id = Value (typeof (string));
-                        device.get_property ("serial", ref id);
-                        message ("Camera appended %s:", id.get_string ());
+                        message ("Camera appended %s:", device.display_name);
                     }
                 }
             }
@@ -88,15 +86,20 @@ public class EyeNeko.Gstreamer : Object {
 
     public void start_capture () {
         var file_dir = Environment.get_user_special_dir (camerabin_mode == CameraBinMode.VIDEO ? UserDirectory.VIDEOS : UserDirectory.PICTURES);
-        var dir = File.new_for_path (file_dir);
+        var dir = File.new_build_filename (file_dir, "EyeNeko");
 
-        if (!dir.query_exists ()) {
+        try {
             dir.make_directory ();
+        } catch (IOError.EXISTS err) {
+            // Ignore
+        } catch (Error err) {
+            warning ("Failed to create dirrectory `%s`: %s", dir.get_path (), err.message);
         }
+
         var time = new DateTime.now ();
         var formated = time.format ("%Y-%m-%d-%H-%M-%S");
-        var filename = @"$formated.$(camerabin_mode==CameraBinMode.VIDEO?"mp4":"jpeg")";
-        var location = Path.build_filename (file_dir, filename);
+        var filename = "%s.%s".printf (formated, camerabin_mode == CameraBinMode.VIDEO ? "mp4" : "jpeg");
+        var location = Path.build_filename (dir.get_path (), filename);
         message ("Capturing %s", location);
         camerabin.set_property ("location", location);
         Signal.emit_by_name (camerabin, "start-capture");
@@ -120,9 +123,10 @@ public class EyeNeko.Gstreamer : Object {
         return bin;
     }
 
-    public void start_stream_from (Camera camera) {
+    public void start_stream_from (Camera? camera) {
         camerabin.set_state (Gst.State.NULL);
-        message ("Stream start");
+        if (camera == null)
+            return;
         current_camera = camera;
         camerasrc_wrapper.set_property
             ("video-source",
@@ -142,7 +146,11 @@ public class EyeNeko.Gstreamer : Object {
         camerabin.set_property ("video-profile", cp);
     }
 
+    private bool is_initialised = false;
     public void init () {
+        if (is_initialised)
+            return;
+        is_initialised = true;
         camerabin.set_property ("camera-source", camerasrc_wrapper);
         camerabin.set_property ("viewfinder-sink", viewfinder);
         color_correction_matrix.red_in_red = 1f;
@@ -151,20 +159,17 @@ public class EyeNeko.Gstreamer : Object {
 
         camerasrc_wrapper.set_property ("video-source-filter",
                                         pipe_elements ("Camera Processing",
+                                                       downscale,
                                                        Gst.ElementFactory.make ("videoconvert"),
                                                        Gst.ElementFactory.make ("glupload"),
                                                        color_correction_matrix,
-                                                       downscale,
-                                                       Gst.ElementFactory.make ("gldownload"),
-                                                       Gst.ElementFactory.make ("videoconvert")
+                                                       Gst.ElementFactory.make ("gldownload")
         ));
-        camerabin.set_property ("viewfinder-filter", Gst.ElementFactory.make ("videoconvert"));
         camerabin.set_property ("image-filter", Gst.ElementFactory.make ("videoconvert"));
 
 
         camerabin.set_property ("video-filter",
                                 pipe_elements ("Video Processing",
-                                               Gst.ElementFactory.make ("queue"),
                                                Gst.ElementFactory.make ("videoconvert"),
                                                Gst.parse_launch (Env.get_variable_or
                                                                  (
@@ -179,8 +184,10 @@ public class EyeNeko.Gstreamer : Object {
 
         notify["camerabin-mode"].connect (() => {
             downscale.max_size = camerabin_mode == CameraBinMode.VIDEO ? downscale_video_to : downscale_photo_to;
-            if (current_camera != null)
-                start_stream_from (current_camera);
+            if (current_camera != null) {
+                camerabin.set_state (Gst.State.READY);
+                camerabin.set_state (Gst.State.PLAYING);
+            }
         });
 
         viewfinder.bind_property ("paintable", this, "viewfinder-paintable", GLib.BindingFlags.SYNC_CREATE);
@@ -197,11 +204,11 @@ public class EyeNeko.Gstreamer : Object {
 
     private bool bus_callback (Gst.Bus bus, Gst.Message message) {
         switch (message.type) {
-        case Gst.MessageType.ERROR:
+        case Gst.MessageType.ERROR :
             GLib.Error err;
             string debug;
             message.parse_error (out err, out debug);
-            GLib.warning ("Error: %s %s", err.message, err.domain.to_string ());
+            GLib.warning ("Error: %s %s %s", err.message, err.domain.to_string (), debug);
             break;
         case Gst.MessageType.EOS:
             GLib.warning ("End of stream\n");
@@ -244,7 +251,5 @@ public class EyeNeko.Gstreamer : Object {
     static construct {
         unowned var a = gst_args;
         Gst.init (ref a);
-
-        instance.init ();
     }
 }

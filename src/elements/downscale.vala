@@ -44,16 +44,18 @@ public class EyeNeko.Elements.Downscale : BinBase {
             var info = new Gst.Video.Info.with_caps (caps);
             var old_info = info.copy ();
             var max_dim = int.max (info.width, info.height);
-            if (filter.max_size > 0 && max_dim > filter.max_size) {
-                double mult = (double) filter.max_size / (double) max_dim;
-                info.width = (int) (info.width * mult);
-                info.height = (int) (info.height * mult);
+            if (filter.max_size <= 0 || max_dim <= filter.max_size) {
+                message ("Downscale: disabled");
+                break;
             }
+            double mult = (double) filter.max_size / (double) max_dim;
+            info.width = (int) (info.width * mult);
+            info.height = (int) (info.height * mult);
             if (info.width % 2 > 0)
                 info.width++;
             if (info.height % 2 > 0)
                 info.height++;
-            debug ("%dx%d=S=>%dx%d", old_info.width, old_info.height, info.width, info.height);
+            message ("Downscale %dx%d=>%dx%d", old_info.width, old_info.height, info.width, info.height);
             var new_caps = caps.copy ();
             new_caps.set_simple ("width", typeof (int), info.width);
             new_caps.set_simple ("height", typeof (int), info.height);
