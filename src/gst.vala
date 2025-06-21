@@ -193,7 +193,10 @@ public class EyeNeko.Gstreamer : Object {
         });
 
         viewfinder.bind_property ("paintable", this, "viewfinder-paintable", GLib.BindingFlags.SYNC_CREATE);
-
+        Gdk.GLContext context;
+        viewfinder_paintable.get ("gl-context", out context);
+        if (context != null)
+            message ("GL supported");
         camerabin.bus.add_watch (0, bus_callback);
     }
 
