@@ -87,9 +87,9 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     public void start_capture () {
-        var home_dir = Environment.get_home_dir ();
-        var file_dir = Path.build_filename (home_dir, camerabin_mode == CameraBinMode.VIDEO ? "Videos" : "Pictures", "EyeNeko");
+        var file_dir = Environment.get_user_special_dir (camerabin_mode == CameraBinMode.VIDEO ? UserDirectory.VIDEOS : UserDirectory.PICTURES);
         var dir = File.new_for_path (file_dir);
+
         if (!dir.query_exists ()) {
             dir.make_directory ();
         }
