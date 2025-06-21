@@ -13,6 +13,8 @@ Mostly made for PostmarketOS phones
   - `AUDIO_ENABLED` = `true` - Bool, is audio record enabled (`false` to disable)
   - `AUDIO_PROFILE` = `audio/x-ac3` - String - audio encoding
   - `CAM_CAPS` = auto max caps by default - String
+  - `ONLY_FORMAT` = null - String, filter pixel formats to show only one (e.g `RGB`)
+
 ## Project TODO:
   - [ ] Fix cam/mode switching? (I can't reproduce errors)
   - [ ] Simplify customization

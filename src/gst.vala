@@ -141,6 +141,7 @@ public class EyeNeko.Gstreamer : Object {
             caps_selecton_model.set_model (filter);
         } else
             caps_selecton_model.set_model (srt);
+
         caps_selecton_model.notify["selected-item"].connect (() => start_stream_from (current_camera));
     }
 
