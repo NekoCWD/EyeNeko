@@ -189,8 +189,7 @@ public class EyeNeko.Gstreamer : Object {
         notify["camerabin-mode"].connect (() => {
             downscale.max_size = camerabin_mode == CameraBinMode.VIDEO ? downscale_video_to : downscale_photo_to;
             if (current_camera != null) {
-                camerabin.set_state (Gst.State.READY);
-                camerabin.set_state (Gst.State.PLAYING);
+                start_stream_from (current_camera);
             }
         });
 
