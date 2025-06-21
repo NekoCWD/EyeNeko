@@ -35,7 +35,6 @@ public class EyeNeko.Elements.Downscale : BinBase {
         switch (event.type) {
         // Reset capsfilter on stream start/stop
         case Gst.EventType.STREAM_START :
-        case Gst.EventType.STREAM_COLLECTION:
             filter.capsfilter.set_property ("caps", new Gst.Caps.any ());
             break;
         case Gst.EventType.CAPS:
