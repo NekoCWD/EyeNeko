@@ -102,6 +102,7 @@ public class EyeNeko.Gstreamer : Object {
         var location = Path.build_filename (dir.get_path (), filename);
         message ("Capturing %s", location);
         camerabin.set_property ("location", location);
+        Gst.Debug.bin_to_dot_file (camerabin, Gst.DebugGraphDetails.ALL, current_camera.device.display_name);
         Signal.emit_by_name (camerabin, "start-capture");
     }
 
