@@ -39,6 +39,7 @@ public class EyeNeko.Application : Adw.Application {
 
     public override void activate () {
         base.activate ();
+        Gstreamer.instance.init ();
         var win = this.active_window ?? new EyeNeko.Window (this);
         win.present ();
         var styling = new Gtk.CssProvider ();

@@ -152,11 +152,13 @@ public class EyeNeko.Gstreamer : Object {
 
     private bool is_initialised = false;
     public void init () {
-        if (is_initialised)
+        if (is_initialised) {
+            warning ("Gstreamer init duplicated");
             return;
+        }
         is_initialised = true;
+        viewfinder.bind_property ("paintable", this, "viewfinder-paintable", GLib.BindingFlags.SYNC_CREATE);
         camerabin.set_property ("camera-source", camerasrc_wrapper);
-        camerabin.set_property ("viewfinder-sink", viewfinder);
         color_correction_matrix.red_in_red = 1f;
         color_correction_matrix.blue_in_blue = 1f;
         color_correction_matrix.green_in_green = 0.9f;
@@ -192,11 +194,18 @@ public class EyeNeko.Gstreamer : Object {
             }
         });
 
-        viewfinder.bind_property ("paintable", this, "viewfinder-paintable", GLib.BindingFlags.SYNC_CREATE);
         Gdk.GLContext context;
         viewfinder_paintable.get ("gl-context", out context);
-        if (context != null)
-            message ("GL supported");
+        if (context != null) {
+            message ("GL supported <3");
+            var gl_sink = Gst.ElementFactory.make ("glsinkbin");
+            gl_sink.set_property ("sink", viewfinder);
+            camerabin.set_property ("viewfinder-sink", gl_sink);
+        } else {
+            warning ("GL NOT supported. Viewfinder will be slow as shit");
+            camerabin.set_property ("viewfinder-sink", viewfinder);
+        }
+
         camerabin.bus.add_watch (0, bus_callback);
     }
 
@@ -250,11 +259,5 @@ public class EyeNeko.Gstreamer : Object {
                 _instance = new Gstreamer ();
             return _instance;
         }
-    }
-
-    static string[] gst_args = {};
-    static construct {
-        unowned var a = gst_args;
-        Gst.init (ref a);
     }
 }
