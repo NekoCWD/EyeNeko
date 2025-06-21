@@ -9,6 +9,9 @@ public class EyeNeko.Gstreamer : Object {
     public bool ready { get; set; default = false; }
     public CameraBinMode camerabin_mode { get; set; default = CameraBinMode.PHOTO; }
     public Gdk.Paintable viewfinder_paintable { get; set; }
+    public ListStore available_caps = new ListStore (typeof (FriendlyCaps));
+    public Gtk.SingleSelection caps_selecton_model = new Gtk.SingleSelection (null);
+
 
     // Private elements
     private Gst.Bin camerabin = (Gst.Bin) Gst.ElementFactory.make ("camerabin", "camerabin");
@@ -21,41 +24,20 @@ public class EyeNeko.Gstreamer : Object {
     public Camera current_camera = null;
     public int downscale_video_to = int.parse (Env.get_variable_or ("DOWNSCALE_VIDEO", "640"));
     public int downscale_photo_to = int.parse (Env.get_variable_or ("DOWNSCALE_PHOTO", "0"));
+    private bool can_start_stream = true;
 
-
-    Gst.Caps get_best_caps (Gst.Device device) {
-        int max_w = 0;
-        int max_h = 0;
-        float max_fps = 0;
-        string max_format = "";
-
-        Gst.Structure max_caps = null;
+    private void set_up_caps (Gst.Device device) {
+        FriendlyCaps best_caps = null;
         var caps = device.get_caps ();
+        can_start_stream = false;
+        available_caps.remove_all ();
         for (uint i = 0; i < caps.get_size (); i++) {
-            var format = caps.get_structure (i).get_name ();
-            int num = 1, denom = 1, width, height;
-            if (caps.get_structure (i).get_field_type ("width") != typeof (int) || caps.get_structure (i).get_field_type ("height") != typeof (int)) {
-                warning ("Can't find best caps :(. I hate arrays!");
-            }
-            caps.get_structure (i).get_int ("width", out width);
-            caps.get_structure (i).get_int ("height", out height);
-            caps.get_structure (i).get_fraction ("framerate", out num, out denom);
-            if (denom == 0)
-                denom = 1;
-            var fps = num / denom;
-            if (max_caps == null || (width > max_w && height > max_h) || (width == max_w && height == max_h && fps > max_fps)) {
-                max_w = width;
-                max_h = height;
-                max_caps = caps.get_structure (i).copy ();
-                max_fps = fps;
-                max_format = format;
-            }
+            var cap = new FriendlyCaps.with_struct (caps.get_structure (i));
+            available_caps.append (cap);
+            best_caps = (best_caps == null || cap.is_res_better (best_caps)) ? cap : best_caps;
         }
-        var best_cap = new Gst.Caps.empty ();
-        best_cap.append_structure (max_caps.copy ());
-        message ("Camera caps: %dx%d %.0f FPS (%s)", max_w, max_h, max_fps, max_format);
-        info ("Full: %s", best_cap.to_string ());
-        return best_cap;
+        can_start_stream = true;
+        caps_selecton_model.selected = 0;
     }
 
     public class Camera : Object {
@@ -75,7 +57,6 @@ public class EyeNeko.Gstreamer : Object {
                 foreach (var device in pwprovider.get_devices ()) {
                     if (device.has_classes ("Video/Source")) {
                         cameras += new Camera (device);
-                        var id = Value (typeof (string));
                         message ("Camera appended %s:", device.display_name);
                     }
                 }
@@ -125,18 +106,22 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     public void start_stream_from (Camera? camera) {
+        if (!can_start_stream)
+            return;
+        message ("Stream stop");
         camerabin.set_state (Gst.State.NULL);
         if (camera == null)
             return;
-        current_camera = camera;
+        if (current_camera != camera) {
+            current_camera = camera;
+            set_up_caps (camera.device);
+        }
+        var caps = ((FriendlyCaps) caps_selecton_model.selected_item).to_caps ().to_string ();
         camerasrc_wrapper.set_property
             ("video-source",
-            new Elements.CameraSrc (camera.device.create_element (null),
-                                    Gst.Caps.from_string (
-                                                          Env.get_variable_or ("CAM_CAPS",
-                                                                               get_best_caps (camera.device).to_string ()
-            ))));
+            new Elements.CameraSrc (camera.device.create_element (null), Gst.Caps.from_string (Env.get_variable_or ("CAM_CAPS", caps))));
         camerabin.set_state (Gst.State.PLAYING);
+        message ("Started stream with %s", caps);
     }
 
     private void add_enc_profile () {
@@ -148,6 +133,17 @@ public class EyeNeko.Gstreamer : Object {
         }
         cp.add_profile (vp);
         camerabin.set_property ("video-profile", cp);
+    }
+
+    construct {
+        var srt = new Gtk.SortListModel (available_caps, new Gtk.CustomSorter ((a, b) => FriendlyCaps.sort_func ((FriendlyCaps) a, (FriendlyCaps) b)));
+        var fmt = Environment.get_variable ("ONLY_FORMAT");
+        if (fmt != null) {
+            var filter = new Gtk.FilterListModel (srt, new Gtk.CustomFilter ((obj) => ((FriendlyCaps) obj).pixelformat == fmt));
+            caps_selecton_model.set_model (filter);
+        } else
+            caps_selecton_model.set_model (srt);
+        caps_selecton_model.notify["selected-item"].connect (() => start_stream_from (current_camera));
     }
 
     private bool is_initialised = false;

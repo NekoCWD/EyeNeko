@@ -1,0 +1,79 @@
+namespace EyeNeko {
+    public class FriendlyCaps : Object {
+        public unowned Gst.Structure struct { get;  construct  set; }
+        public enum Format {
+            RAW,
+            JPEG,
+            UNKNOWN;
+            // TODO: Add more formats
+
+            public string to_string () {
+                return ((EnumClass) typeof (Format).class_ref ()).get_value (this).value_nick.up ();
+            }
+
+            public string to_string_or (string detailed) {
+                return this == UNKNOWN ? detailed : to_string ();
+            }
+
+            public static Format from_gst_name (string name) {
+                switch (name) {
+                case "video/x-raw":
+                    return RAW;
+                case "image/jpeg":
+                    return JPEG;
+                default:
+                    return UNKNOWN;
+                }
+            }
+        }
+
+        public string format_name { get; default = ""; }
+        public Format format { get; default = Format.UNKNOWN; }
+        public int width { get; default = 0; }
+        public int height { get; default = 0; }
+        public float fps { get; default = 0f; }
+        public string pixelformat { get; default = ""; }
+
+        construct {
+            struct.get_int ("width", out _width);
+            struct.get_int ("height", out _height);
+            _format_name = struct.get_name ();
+            _format = Format.from_gst_name (format_name);
+            _pixelformat = struct.get_string ("format"); int num, denom;
+            struct.get_fraction ("framerate", out num, out denom);
+            if (denom == 0)
+                denom = 1;
+            _fps = num / denom;
+        }
+
+        public FriendlyCaps.with_caps (Gst.Caps caps) {
+            if (caps.get_size () != 1) {
+                warning ("Unsupported caps structute count (%u)", caps.get_size ());
+                return;
+            }
+            Object (struct : caps.get_structure (0).copy ());
+        }
+
+        public FriendlyCaps.with_struct (Gst.Structure struct) {
+            Object (struct : struct);
+        }
+
+        public string to_string () {
+            return "%s %dx%d %0.1f FPS %s".printf (format.to_string_or (format_name), width, height, fps, pixelformat ?? "");
+        }
+
+        public bool is_res_better (FriendlyCaps cap) {
+            return (width * height > cap.width * cap.height);
+        }
+
+        public bool is_res_same (FriendlyCaps cap) {
+            return (width * height == cap.width * cap.height);
+        }
+
+        public Gst.Caps to_caps () {
+            var res = new Gst.Caps.empty ();
+            res.append_structure (struct.copy ());
+            return res;
+        }
+    }
+}

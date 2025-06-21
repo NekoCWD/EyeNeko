@@ -1,0 +1,65 @@
+using Gtk 4.0;
+
+template $EyeNekoUiCapsRow: Box {
+  styles [
+    "caps-row",
+  ]
+
+  spacing: 12;
+
+  Box {
+    spacing: 3;
+
+    styles [
+      "caps-fps-box",
+    ]
+
+    Label fps {
+      styles [
+        "caps-fps",
+      ]
+
+      label: "15";
+    }
+
+    Label {
+      styles [
+        "caps-label",
+      ]
+
+      label: "FPS";
+    }
+  }
+
+  Label resolution {
+    styles [
+      "caps-res",
+    ]
+
+    label: "800x600";
+  }
+
+  Box {
+    spacing: 3;
+
+    styles [
+      "caps-format-box",
+    ]
+
+    Label format {
+      styles [
+        "caps-format",
+      ]
+
+      label: "RAW";
+    }
+
+    Label pixelformat {
+      styles [
+        "caps-pixelformat",
+      ]
+
+      label: "RGB";
+    }
+  }
+}

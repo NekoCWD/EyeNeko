@@ -30,3 +30,38 @@
 .mode > toggle:checked:hover {
     color: goldenrod;
 }
+
+.caps-list {
+    color: white;
+    background: none;
+    border-radius: 11px;
+}
+
+.caps-row {
+    padding: 6px;
+}
+
+.caps-list > row {
+    border-radius: 11px;
+}
+
+.caps-row > .caps-format-box {
+    background: alpha(var(--red-1), 0.2);
+    padding: 5px;
+    border-radius: 5px;
+}
+.caps-row > .caps-format-box > .caps-format {
+    background: alpha(var(--red-1), 0.4);
+    border-radius: 3px;
+    padding: 2px;
+}
+.caps-row > .caps-fps-box {
+    background: alpha(var(--green-1), 0.2);
+    padding: 5px;
+    border-radius: 5px;
+}
+.caps-row > .caps-fps-box > .caps-label {
+    background: alpha(var(--green-1), 0.4);
+    border-radius: 3px;
+    padding: 2px;
+}

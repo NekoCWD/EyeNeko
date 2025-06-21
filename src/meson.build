@@ -11,6 +11,8 @@ eyeneko_sources = [
   'elements/gl_filter.vala',
   'elements/color_correction_matrix.vala',
   'ui/preferences.vala',
+  'ui/caps-row.vala',
+  'logic/friendly-caps.vala',
 ]
 
 vapi_dir = meson.current_source_dir() / 'vapi'
@@ -29,6 +31,7 @@ blueprints = custom_target(
   'blueprints',
   input: files(
     'gtk/help-overlay.blp',
+    'ui/caps-row.blp',
     'window.blp',
   ),
   output: '.',

@@ -17,7 +17,7 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
-
+using EyeNeko.Ui;
 [GtkTemplate (ui = "/io/gitlab/nekocwd/eyeneko/window.ui")]
 public class EyeNeko.Window : Adw.ApplicationWindow {
     [GtkChild]
@@ -29,12 +29,15 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
     [GtkChild]
     private unowned Gtk.MenuButton video_source_btn;
     [GtkChild]
+    private unowned Gtk.MenuButton video_caps_btn;
+    [GtkChild]
     private unowned Gtk.Button capture_btn;
     [GtkChild]
     private unowned Adw.ToggleGroup camera_mode;
 
 
     public string camera_path { get; set; default = "Unknown"; }
+    public string current_caps { get; set; default = "Unknown"; }
     private void setup_video_source_changer () {
         notify["camera-path"].connect (() => {
             foreach (var camera in Gstreamer.Camera.get_all ()) {
@@ -72,6 +75,34 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         });
     }
 
+    Gtk.Popover popover = null;
+    void setup_caps_changer () {
+        var factory = new Gtk.SignalListItemFactory ();
+        factory.setup.connect ((mdl) => {
+            var item = (Gtk.ListItem) mdl;
+            item.child = new CapsRow ();
+        });
+        factory.bind.connect ((mdl) => {
+            var item = (Gtk.ListItem) mdl;
+            var row = (CapsRow) item.child;
+            var data = (FriendlyCaps) item.item;
+            row.set_caps (data);
+        });
+
+        popover = new Gtk.Popover () {
+            child = new Gtk.ScrolledWindow () {
+                css_classes = { "caps-list" },
+                child = new Gtk.ListView (Gstreamer.instance.caps_selecton_model, factory) {
+                    css_classes = { "caps-list" },
+                },
+                propagate_natural_width = true,
+                propagate_natural_height = true,
+                max_content_height = 300,
+            },
+        };
+        video_caps_btn.set_popover (popover);
+    }
+
     public Window (Gtk.Application app) {
         Object (application: app);
         overlay.add_overlay (toolbar);
@@ -100,6 +131,7 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         camera_mode.active_name = Env.get_variable_or ("CAM_M", "photo");
 
         setup_video_source_changer ();
+        setup_caps_changer ();
         close_request.connect (() => {
             Gstreamer.instance.start_stream_from (null);
             return false;
