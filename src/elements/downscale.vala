@@ -32,7 +32,13 @@ public class EyeNeko.Elements.Downscale : BinBase {
 
     static bool sink_event (Gst.Pad pad, Gst.Object? parent, owned Gst.Event event) {
         var filter = (Downscale) parent;
-        if (event.type == Gst.EventType.CAPS) {
+        switch (event.type) {
+        // Reset capsfilter on stream start/stop
+        case Gst.EventType.STREAM_START :
+        case Gst.EventType.STREAM_COLLECTION:
+            filter.capsfilter.set_property ("caps", new Gst.Caps.any ());
+            break;
+        case Gst.EventType.CAPS:
             Gst.Caps caps;
             event.parse_caps (out caps);
             var info = new Gst.Video.Info.with_caps (caps);
@@ -52,6 +58,9 @@ public class EyeNeko.Elements.Downscale : BinBase {
             new_caps.set_simple ("width", typeof (int), info.width);
             new_caps.set_simple ("height", typeof (int), info.height);
             filter.capsfilter.set_property ("caps", new_caps);
+            break;
+        default:
+            break;
         }
         return pad.event_default (parent, event);
     }
