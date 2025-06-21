@@ -46,67 +46,81 @@ Adw.ToolbarView toolbar {
 
     [center]
     Box {
+      orientation: vertical;
+      halign: fill;
+      hexpand: true;
       spacing: 12;
 
-      MenuButton profile_btn {
-        styles [
-          "circular",
-          "menu",
-        ]
-
-        Image {
-          icon-name: "encoder-knob-symbolic";
-          pixel-size: 24;
-        }
-
-        width-request: 40;
-        height-request: 40;
-        valign: center;
-      }
-
-      Button capture_btn {
-        width-request: 80;
-        height-request: 80;
-
-        styles [
-          "circular",
-          "capture-btn",
-        ]
-      }
-
-      MenuButton video_source_btn {
-        styles [
-          "circular",
-          "menu",
-        ]
-
-        Image {
-          icon-name: "pick-camera-alt2-symbolic";
-          pixel-size: 24;
-        }
-
-        width-request: 40;
-        height-request: 40;
-        valign: center;
-      }
-
       Adw.ToggleGroup camera_mode {
-        styles [
-          "round",
-        ]
-
         valign: center;
-        orientation: vertical;
+        halign: fill;
+        hexpand: true;
+        orientation: horizontal;
         active-name: "photo";
+
+        styles [
+          "flat",
+          "mode",
+        ]
 
         Adw.Toggle {
           icon-name: "camera-photo-symbolic";
+          label: "Photo";
           name: "photo";
         }
 
         Adw.Toggle {
           icon-name: "video-camera-symbolic";
+          label: "Video";
           name: "video";
+        }
+      }
+
+      Box {
+        halign: center;
+        spacing: 12;
+
+        MenuButton profile_btn {
+          styles [
+            "circular",
+            "menu",
+          ]
+
+          Image {
+            icon-name: "encoder-knob-symbolic";
+            pixel-size: 24;
+          }
+
+          width-request: 40;
+          height-request: 40;
+          valign: center;
+        }
+
+        Button capture_btn {
+          valign: center;
+          width-request: 80;
+          height-request: 80;
+
+          styles [
+            "circular",
+            "capture-btn",
+          ]
+        }
+
+        MenuButton video_source_btn {
+          styles [
+            "circular",
+            "menu",
+          ]
+
+          Image {
+            icon-name: "pick-camera-alt2-symbolic";
+            pixel-size: 24;
+          }
+
+          width-request: 40;
+          height-request: 40;
+          valign: center;
         }
       }
     }

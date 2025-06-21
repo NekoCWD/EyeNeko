@@ -15,3 +15,18 @@
 .focus-btn {
     color: green;
 }
+.mode > toggle {
+    background: none;
+}
+
+.mode > toggle:hover {
+    color: white;
+}
+
+.mode > toggle:checked {
+    color: darkgoldenrod;
+}
+
+.mode > toggle:checked:hover {
+    color: goldenrod;
+}
