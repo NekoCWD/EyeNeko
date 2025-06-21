@@ -70,6 +70,15 @@ namespace EyeNeko {
             return (width * height == cap.width * cap.height);
         }
 
+        public static int sort_func (FriendlyCaps a, FriendlyCaps b) {
+            if (a.width > b.width)
+                return -1;
+            else if (a.width == b.width)
+                return a.height > b.height ? -1 : a.height == b.height ? a.fps > b.fps ? -1 : a.fps == b.fps ? 0 : 1 : 1;
+            else
+                return 1;
+        }
+
         public Gst.Caps to_caps () {
             var res = new Gst.Caps.empty ();
             res.append_structure (struct.copy ());

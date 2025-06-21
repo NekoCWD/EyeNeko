@@ -27,14 +27,12 @@ public class EyeNeko.Gstreamer : Object {
     private bool can_start_stream = true;
 
     private void set_up_caps (Gst.Device device) {
-        FriendlyCaps best_caps = null;
         var caps = device.get_caps ();
         can_start_stream = false;
         available_caps.remove_all ();
         for (uint i = 0; i < caps.get_size (); i++) {
             var cap = new FriendlyCaps.with_struct (caps.get_structure (i));
             available_caps.append (cap);
-            best_caps = (best_caps == null || cap.is_res_better (best_caps)) ? cap : best_caps;
         }
         can_start_stream = true;
         caps_selecton_model.selected = 0;
