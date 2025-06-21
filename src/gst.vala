@@ -164,7 +164,6 @@ public class EyeNeko.Gstreamer : Object {
         camerasrc_wrapper.set_property ("video-source-filter",
                                         pipe_elements ("Camera Processing",
                                                        downscale,
-                                                       Gst.ElementFactory.make ("videoconvert"),
                                                        Gst.ElementFactory.make ("glupload"),
                                                        color_correction_matrix,
                                                        Gst.ElementFactory.make ("gldownload")
