@@ -10,6 +10,7 @@ eyeneko_sources = [
   'elements/downscale.vala',
   'elements/gl_filter.vala',
   'elements/color_correction_matrix.vala',
+  'elements/qr_scaner.vala',
   'ui/preferences.vala',
   'ui/caps-row.vala',
   'logic/friendly-caps.vala',
@@ -25,6 +26,8 @@ eyeneko_deps = [
   #  dependency('gstreamer-pbutils-1.0'),
   dependency('gstreamer-pbutils-1.0'),
   valac.find_library('encoding-profile-helper', dirs: vapi_dir),
+  dependency('zbar'),
+  dependency('gee-0.8'),
 ]
 
 blueprints = custom_target(
