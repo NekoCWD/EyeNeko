@@ -255,7 +255,7 @@ namespace ZBar {
         public unowned Symbol? next();
 
         [CCode (array_null_terminated=true)]
-        public string get_data();
+        public unowned string get_data();
     }
 
 }
