@@ -8,5 +8,6 @@
   <file preprocess="xml-stripblanks">actions/camera-photo-symbolic.svg</file>
   <file preprocess="xml-stripblanks">actions/pick-camera-alt2-symbolic.svg</file>
   <file preprocess="xml-stripblanks">actions/encoder-knob-symbolic.svg</file>
+  <file preprocess="xml-stripblanks">actions/qr-code-scanner-symbolic.svg</file>
   </gresource>
 </gresources>

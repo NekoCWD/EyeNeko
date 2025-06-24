@@ -109,24 +109,16 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
 
         Gstreamer.instance.bind_property ("viewfinder-paintable", viewfinder, "paintable", BindingFlags.SYNC_CREATE);
         capture_btn.clicked.connect (() => {
-            if (Gstreamer.instance.camerabin_mode == Gstreamer.CameraBinMode.VIDEO && !Gstreamer.instance.ready) {
+            if (Gstreamer.instance.camera_mode == Gstreamer.CameraMode.VIDEO && !Gstreamer.instance.ready) {
                 Gstreamer.instance.stop_capture ();
             } else {
                 Gstreamer.instance.start_capture ();
             }
         });
 
-        camera_mode.notify["active"].connect (() => {
-            switch (camera_mode.active_name) {
-                case "photo":
-                    Gstreamer.instance.camerabin_mode = Gstreamer.CameraBinMode.PHOTO;
-                    break;
-                case "video":
-                    Gstreamer.instance.camerabin_mode = Gstreamer.CameraBinMode.VIDEO;
-                    break;
-                default:
-                    break;
-            }
+        camera_mode.bind_property ("active-name", Gstreamer.instance, "camera-mode", BindingFlags.SYNC_CREATE, (b, s, ref d) => {
+            d = Gstreamer.CameraMode.parse (s.get_string ());
+            return true;
         });
         camera_mode.active_name = Env.get_variable_or ("CAM_M", "photo");
 
@@ -136,5 +128,7 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
             Gstreamer.instance.start_stream_from (null);
             return false;
         });
+
+        Gstreamer.instance.qr_scaner.new_qr.connect ((qr) => message ("QR scaned %s", qr));
     }
 }

@@ -5,9 +5,39 @@ public class EyeNeko.Gstreamer : Object {
         PHOTO = 1,
     }
 
+    public enum CameraMode {
+        VIDEO,
+        PHOTO,
+        QR;
+
+        public string to_string () {
+            return ((EnumClass) typeof (CameraMode).class_ref ()).get_value (this).value_nick;
+        }
+
+        public static CameraMode parse (string data) {
+            return ((EnumClass) typeof (CameraMode).class_ref ()).get_value_by_nick (data) ? .value ?? 0;
+        }
+
+        public CameraBinMode to_camerabin_mode () {
+            return this == VIDEO ? CameraBinMode.VIDEO : CameraBinMode.PHOTO;
+        }
+    }
+
+    private static Gee.HashMap<CameraMode, Gst.Caps> mode_caps = new Gee.HashMap<CameraMode, Gst.Caps> ();
+    private static Gee.HashMap<CameraMode, int> mode_downscale = new Gee.HashMap<CameraMode, int> ();
+
+    static construct {
+        mode_caps[CameraMode.PHOTO] = new Gst.Caps.any ();
+        mode_caps[CameraMode.VIDEO] = new Gst.Caps.any ();
+        mode_caps[CameraMode.QR] = Gst.Caps.from_string ("video/x-raw, format=GRAY8");
+        mode_downscale[CameraMode.VIDEO] = int.parse (Env.get_variable_or ("DOWNSCALE_VIDEO", "640"));
+        mode_downscale[CameraMode.PHOTO] = int.parse (Env.get_variable_or ("DOWNSCALE_PHOTO", "0"));
+        mode_downscale[CameraMode.QR] = int.parse (Env.get_variable_or ("DOWNSCALE_QR", "0"));
+    }
+
     // Public properties
     public bool ready { get; set; default = false; }
-    public CameraBinMode camerabin_mode { get; set; default = CameraBinMode.PHOTO; }
+    public CameraMode camera_mode { get; set; default = CameraMode.PHOTO; }
     public Gdk.Paintable viewfinder_paintable { get; set; }
     public ListStore available_caps = new ListStore (typeof (FriendlyCaps));
     public Gtk.SingleSelection caps_selecton_model = new Gtk.SingleSelection (null);
@@ -19,11 +49,11 @@ public class EyeNeko.Gstreamer : Object {
     private Gst.Bin camerasrc_wrapper = (Gst.Bin) Gst.ElementFactory.make ("wrappercamerabinsrc");
     private Elements.ColorCorrectionMatrix color_correction_matrix = new Elements.ColorCorrectionMatrix ();
     private Elements.Downscale downscale = new Elements.Downscale ();
+    private Gst.Element camera_convert_caps = Gst.ElementFactory.make ("capsfilter");
+    public Elements.QrScaner qr_scaner = new Elements.QrScaner ();
 
     // Other Fields
     public Camera current_camera = null;
-    public int downscale_video_to = int.parse (Env.get_variable_or ("DOWNSCALE_VIDEO", "640"));
-    public int downscale_photo_to = int.parse (Env.get_variable_or ("DOWNSCALE_PHOTO", "0"));
     private bool can_start_stream = true;
 
     private void set_up_caps (Gst.Device device) {
@@ -66,7 +96,7 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     public void start_capture () {
-        var file_dir = Environment.get_user_special_dir (camerabin_mode == CameraBinMode.VIDEO ? UserDirectory.VIDEOS : UserDirectory.PICTURES);
+        var file_dir = Environment.get_user_special_dir (camera_mode == CameraMode.VIDEO ? UserDirectory.VIDEOS : UserDirectory.PICTURES);
         var dir = File.new_build_filename (file_dir, "EyeNeko");
 
         try {
@@ -79,7 +109,7 @@ public class EyeNeko.Gstreamer : Object {
 
         var time = new DateTime.now ();
         var formated = time.format ("%Y-%m-%d-%H-%M-%S");
-        var filename = "%s.%s".printf (formated, camerabin_mode == CameraBinMode.VIDEO ? "mp4" : "jpeg");
+        var filename = "%s.%s".printf (formated, camera_mode == CameraMode.VIDEO ? "mp4" : "jpeg");
         var location = Path.build_filename (dir.get_path (), filename);
         message ("Capturing %s", location);
         camerabin.set_property ("location", location);
@@ -163,6 +193,10 @@ public class EyeNeko.Gstreamer : Object {
         camerasrc_wrapper.set_property ("video-source-filter",
                                         pipe_elements ("Camera Processing",
                                                        downscale,
+                                                       Gst.ElementFactory.make ("videoconvert"),
+                                                       camera_convert_caps,
+                                                       qr_scaner,
+                                                       Gst.ElementFactory.make ("videoconvert"),
                                                        Gst.ElementFactory.make ("glupload"),
                                                        color_correction_matrix,
                                                        Gst.ElementFactory.make ("gldownload")
@@ -181,15 +215,26 @@ public class EyeNeko.Gstreamer : Object {
         )));
 
         camerabin.bind_property ("idle", this, "ready", BindingFlags.SYNC_CREATE);
-        this.bind_property ("camerabin-mode", camerabin, "mode");
-        add_enc_profile ();
-
-        notify["camerabin-mode"].connect (() => {
-            downscale.max_size = camerabin_mode == CameraBinMode.VIDEO ? downscale_video_to : downscale_photo_to;
-            if (current_camera != null) {
-                start_stream_from (current_camera);
-            }
+        this.bind_property ("camera-mode", camerabin, "mode", BindingFlags.SYNC_CREATE, (b, s, ref d) => {
+            d.set_enum (((CameraMode) s).to_camerabin_mode ());
+            return true;
         });
+        this.bind_property ("camera-mode", camera_convert_caps, "caps", BindingFlags.SYNC_CREATE, (b, s, ref d) => {
+            d = mode_caps[((CameraMode) s)];
+            return true;
+        });
+        this.bind_property ("camera-mode", downscale, "max-size", BindingFlags.SYNC_CREATE, (b, s, ref d) => {
+            d = mode_downscale[((CameraMode) s)];
+            return true;
+        });
+        this.bind_property ("camera-mode", qr_scaner, "enabled", BindingFlags.SYNC_CREATE, (b, s, ref d) => {
+            d = (CameraMode) s == CameraMode.QR;
+            return true;
+        });
+
+        notify["camera-mode"].connect (() => start_stream_from (current_camera));
+
+        add_enc_profile ();
 
         Gdk.GLContext context;
         viewfinder_paintable.get ("gl-context", out context);
