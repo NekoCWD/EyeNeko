@@ -65,3 +65,15 @@
     border-radius: 3px;
     padding: 2px;
 }
+
+.qr-list {
+    background: none;
+    padding: 12px;
+}
+
+.qr-list > row {
+    margin: 6px;
+    padding: 12px;
+    border-radius: 10px;
+    background-color: alpha(var(--view-fg-color), 0.1);
+}

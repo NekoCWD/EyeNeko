@@ -4,6 +4,7 @@
     <file preprocess="xml-stripblanks">window.ui</file>
     <file preprocess="xml-stripblanks">gtk/help-overlay.ui</file>
     <file preprocess="xml-stripblanks">ui/caps-row.ui</file>
+    <file preprocess="xml-stripblanks">ui/qr-row.ui</file>
     <file>style.css</file>
     <file>shaders/ccm.glsl</file>
   </gresource>

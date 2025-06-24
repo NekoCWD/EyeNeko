@@ -78,9 +78,13 @@ public class EyeNeko.Elements.QrScaner : Gst.Base.Transform {
         image.set_data ((void[]) img, () => {}); // Don't free data
         scaner.scan_image (image);
         for (unowned var sym = image.first_symbol (); sym != null; sym = sym.next ()) {
-            var data = sym.get_data ();
-            if (qr_codes.add (data))
-                new_qr (data);
+            unowned var data = sym.get_data ();
+            if (qr_codes.add (data)) {
+                GLib.Idle.add (() => { // HACK it fixes GTK crash
+                    new_qr (data);
+                    return false;
+                }, Priority.DEFAULT);
+            }
         }
         return Gst.FlowReturn.OK;
     }

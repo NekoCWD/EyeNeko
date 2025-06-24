@@ -1,0 +1,40 @@
+using Gtk 4.0;
+
+template $EyeNekoUiQRRow: Box {
+  styles [
+    "qr-row",
+  ]
+
+  spacing: 12;
+  halign: fill;
+  hexpand: true;
+
+  Label data {
+    styles [
+      "qr-data",
+    ]
+
+    use-markup: false;
+    wrap: true;
+    wrap-mode: word_char;
+  }
+
+  Separator {
+    styles [
+      "spacer",
+    ]
+
+    halign: fill;
+    hexpand: true;
+  }
+
+  Button copy {
+    valign: center;
+
+    styles [
+      "flat",
+    ]
+
+    icon-name: "edit-copy-symbolic";
+  }
+}

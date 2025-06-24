@@ -135,6 +135,39 @@ Adw.ToolbarView toolbar {
   // content: TODO :)
 }
 
+Adw.Dialog qr_dialog {
+  follows-content-size: true;
+  title: _("Scaned QRs");
+
+  Adw.ToolbarView {
+    styles [
+      "flat",
+    ]
+
+    [top]
+    Adw.HeaderBar {}
+
+    content: ScrolledWindow {
+      propagate-natural-height: true;
+      propagate-natural-width: true;
+
+      ListView {
+        styles [
+          "qr-list",
+        ]
+
+        show-separators: true;
+
+        factory: SignalListItemFactory qr_factory {};
+
+        model: NoSelection {
+          model: StringList qr_list {};
+        };
+      }
+    };
+  }
+}
+
 menu primary_menu {
   section {
     item {

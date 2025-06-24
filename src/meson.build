@@ -13,6 +13,7 @@ eyeneko_sources = [
   'elements/qr_scaner.vala',
   'ui/preferences.vala',
   'ui/caps-row.vala',
+  'ui/qr-row.vala',
   'logic/friendly-caps.vala',
 ]
 
@@ -35,6 +36,7 @@ blueprints = custom_target(
   input: files(
     'gtk/help-overlay.blp',
     'ui/caps-row.blp',
+    'ui/qr-row.blp',
     'window.blp',
   ),
   output: '.',

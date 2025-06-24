@@ -34,7 +34,12 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
     private unowned Gtk.Button capture_btn;
     [GtkChild]
     private unowned Adw.ToggleGroup camera_mode;
-
+    [GtkChild]
+    private unowned Gtk.SignalListItemFactory qr_factory;
+    [GtkChild]
+    private unowned Gtk.StringList qr_list;
+    [GtkChild]
+    private unowned Adw.Dialog qr_dialog;
 
     public string camera_path { get; set; default = "Unknown"; }
     public string current_caps { get; set; default = "Unknown"; }
@@ -103,17 +108,52 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         video_caps_btn.set_popover (popover);
     }
 
+    private void setup_qr_scaner () {
+        qr_factory.setup.connect ((mdl) => {
+            var item = (Gtk.ListItem) mdl;
+            item.child = new QRRow ();
+        });
+        qr_factory.bind.connect ((mdl) => {
+            var item = (Gtk.ListItem) mdl;
+            var row = (QRRow) item.child;
+            var data = (Gtk.StringObject) item.item;
+            row.set_qr (data.string);
+        });
+        Gstreamer.instance.qr_scaner.new_qr.connect ((qr) => {
+            qr_list.append (qr);
+            qr_dialog.present (this);
+        });
+    }
+
     public Window (Gtk.Application app) {
         Object (application: app);
         overlay.add_overlay (toolbar);
 
         Gstreamer.instance.bind_property ("viewfinder-paintable", viewfinder, "paintable", BindingFlags.SYNC_CREATE);
         capture_btn.clicked.connect (() => {
-            if (Gstreamer.instance.camera_mode == Gstreamer.CameraMode.VIDEO && !Gstreamer.instance.ready) {
-                Gstreamer.instance.stop_capture ();
-            } else {
-                Gstreamer.instance.start_capture ();
+            switch (Gstreamer.instance.camera_mode) {
+                case Gstreamer.CameraMode.QR:
+                    qr_dialog.present (this);
+                    break;
+                case Gstreamer.CameraMode.VIDEO:
+                    if (Gstreamer.instance.ready)
+                        Gstreamer.instance.start_capture ();
+                    else
+                        Gstreamer.instance.stop_capture ();
+                    break;
+                default:
+                    Gstreamer.instance.start_capture ();
+                    break;
             }
+        });
+
+        setup_video_source_changer ();
+        setup_caps_changer ();
+        setup_qr_scaner ();
+
+        close_request.connect (() => {
+            Gstreamer.instance.start_stream_from (null);
+            return false;
         });
 
         camera_mode.bind_property ("active-name", Gstreamer.instance, "camera-mode", BindingFlags.SYNC_CREATE, (b, s, ref d) => {
@@ -121,14 +161,5 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
             return true;
         });
         camera_mode.active_name = Env.get_variable_or ("CAM_M", "photo");
-
-        setup_video_source_changer ();
-        setup_caps_changer ();
-        close_request.connect (() => {
-            Gstreamer.instance.start_stream_from (null);
-            return false;
-        });
-
-        Gstreamer.instance.qr_scaner.new_qr.connect ((qr) => message ("QR scaned %s", qr));
     }
 }
