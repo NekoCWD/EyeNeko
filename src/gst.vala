@@ -140,6 +140,7 @@ public class EyeNeko.Gstreamer : Object {
             return;
         message ("Stream stop");
         camerabin.set_state (Gst.State.NULL);
+
         if (camera == null)
             return;
         if (current_camera != camera) {
@@ -260,7 +261,13 @@ public class EyeNeko.Gstreamer : Object {
 
     private bool bus_callback (Gst.Bus bus, Gst.Message message) {
         switch (message.type) {
-        case Gst.MessageType.ERROR :
+        case Gst.MessageType.WARNING :
+            GLib.Error err;
+            string debug;
+            message.parse_warning (out err, out debug);
+            GLib.warning ("Warning: %s %s %s", err.message, err.domain.to_string (), debug);
+            break;
+        case Gst.MessageType.ERROR:
             GLib.Error err;
             string debug;
             message.parse_error (out err, out debug);
