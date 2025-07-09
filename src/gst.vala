@@ -32,7 +32,7 @@ public class EyeNeko.Gstreamer : Object {
         mode_caps[CameraMode.QR] = Gst.Caps.from_string ("video/x-raw, format=GRAY8");
         mode_downscale[CameraMode.VIDEO] = int.parse (Env.get_variable_or ("DOWNSCALE_VIDEO", "640"));
         mode_downscale[CameraMode.PHOTO] = int.parse (Env.get_variable_or ("DOWNSCALE_PHOTO", "0"));
-        mode_downscale[CameraMode.QR] = int.parse (Env.get_variable_or ("DOWNSCALE_QR", "0"));
+        mode_downscale[CameraMode.QR] = int.parse (Env.get_variable_or ("DOWNSCALE_QR", "640"));
     }
 
     // Public properties
