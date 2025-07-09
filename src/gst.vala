@@ -82,7 +82,7 @@ public class EyeNeko.Gstreamer : Object {
         public static Camera[] get_all () {
             if (cameras == null) {
                 cameras = new Camera[0];
-                var pwprovider = Gst.DeviceProviderFactory.get_by_name ("pipewiredeviceprovider");
+                var pwprovider = Gst.DeviceProviderFactory.get_by_name (Env.get_variable_or ("CAM_PROVIDER", "pipewiredeviceprovider"));
                 pwprovider.start ();
                 foreach (var device in pwprovider.get_devices ()) {
                     if (device.has_classes ("Video/Source")) {
