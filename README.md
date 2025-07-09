@@ -15,6 +15,7 @@ Mostly made for PostmarketOS phones
   - `CAM_CAPS` = auto max caps by default - String
   - `ONLY_FORMAT` = null - String, filter pixel formats to show only one (e.g `RGB`)
   - `CAM_PROVIDER` = `pipewiredeviceprovider` - String, camera provider name (e.g `libcameraprovider`)
+  - `ROTATE` = `0` - Int, Rotation
 
 ## Project TODO:
   - [ ] Fix cam/mode switching? (I can't reproduce errors)

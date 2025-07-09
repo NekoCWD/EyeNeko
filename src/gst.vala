@@ -51,6 +51,7 @@ public class EyeNeko.Gstreamer : Object {
     private Elements.Downscale downscale = new Elements.Downscale ();
     private Gst.Element camera_convert_caps = Gst.ElementFactory.make ("capsfilter");
     public Elements.QrScaner qr_scaner = new Elements.QrScaner ();
+    private Gst.Element rotate = Gst.ElementFactory.make ("glvideoflip");
 
     // Other Fields
     public Camera current_camera = null;
@@ -199,12 +200,13 @@ public class EyeNeko.Gstreamer : Object {
                                                        qr_scaner,
                                                        Gst.ElementFactory.make ("videoconvert"),
                                                        Gst.ElementFactory.make ("glupload"),
+                                                       rotate,
                                                        color_correction_matrix,
                                                        Gst.ElementFactory.make ("gldownload")
         ));
         camerabin.set_property ("image-filter", Gst.ElementFactory.make ("videoconvert"));
 
-
+        rotate.set ("method", int.parse (Env.get_variable_or ("ROTATE", "0")));
         camerabin.set_property ("video-filter",
                                 pipe_elements ("Video Processing",
                                                Gst.ElementFactory.make ("videoconvert"),
