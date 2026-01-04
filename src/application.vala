@@ -19,6 +19,8 @@
  */
 
 public class EyeNeko.Application : Adw.Application {
+    signal void shot ();
+
     public Application () {
         Object (
                 application_id: "io.gitlab.nekocwd.eyeneko",
@@ -35,6 +37,7 @@ public class EyeNeko.Application : Adw.Application {
         };
         this.add_action_entries (action_entries, this);
         this.set_accels_for_action ("app.quit", { "<primary>q" });
+        this.set_accels_for_action ("win.shot", { "<primary>s" });
     }
 
     public override void activate () {

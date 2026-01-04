@@ -125,27 +125,31 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         });
     }
 
+    private void shot () {
+        switch (Gstreamer.instance.camera_mode) {
+        case Gstreamer.CameraMode.QR:
+            qr_dialog.present (this);
+            break;
+        case Gstreamer.CameraMode.VIDEO:
+            if (Gstreamer.instance.ready)
+                Gstreamer.instance.start_capture ();
+            else
+                Gstreamer.instance.stop_capture ();
+            break;
+        default:
+            Gstreamer.instance.start_capture ();
+            break;
+        }
+    }
+
     public Window (Gtk.Application app) {
         Object (application: app);
         overlay.add_overlay (toolbar);
+        add_action_entries ({
+            { "shot", this.shot }
+        }, this);
 
         Gstreamer.instance.bind_property ("viewfinder-paintable", viewfinder, "paintable", BindingFlags.SYNC_CREATE);
-        capture_btn.clicked.connect (() => {
-            switch (Gstreamer.instance.camera_mode) {
-                case Gstreamer.CameraMode.QR:
-                    qr_dialog.present (this);
-                    break;
-                case Gstreamer.CameraMode.VIDEO:
-                    if (Gstreamer.instance.ready)
-                        Gstreamer.instance.start_capture ();
-                    else
-                        Gstreamer.instance.stop_capture ();
-                    break;
-                default:
-                    Gstreamer.instance.start_capture ();
-                    break;
-            }
-        });
 
         setup_video_source_changer ();
         setup_caps_changer ();
