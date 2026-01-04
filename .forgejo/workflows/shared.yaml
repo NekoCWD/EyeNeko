@@ -1,0 +1,13 @@
+name: Shared CI
+run-name: Shared CI
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Shared
+    uses: nekocwd/shared-ci/.forgejo/workflows/default.yaml@main
+    secrets: inherit
+    with:
+      event-name: ${{forge.event_name}}
