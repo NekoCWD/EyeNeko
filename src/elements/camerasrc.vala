@@ -22,7 +22,6 @@ public class EyeNeko.Elements.CameraSrc : BinBase {
     public Gst.Element source = null;
     public Gst.Element capsfilter = Gst.ElementFactory.make ("capsfilter", "capsfilter");
     public Gst.Element decodebin = Gst.ElementFactory.make ("decodebin3", "decoder");
-    public Gst.Element identity = Gst.ElementFactory.make ("identity");
 
     static construct {
         set_static_metadata ("camerasrc",
@@ -32,15 +31,16 @@ public class EyeNeko.Elements.CameraSrc : BinBase {
     }
 
     public CameraSrc (Gst.Element src, Gst.Caps caps = new Gst.Caps.any ()) {
+        srcpad = new Gst.GhostPad.no_target ("src", Gst.PadDirection.SRC);
+        add_pad (srcpad);
         source = src;
-        add_many (source, capsfilter, decodebin, identity);
+        add_many (source, capsfilter, decodebin);
         source.link_many (capsfilter, decodebin);
         capsfilter.set_property ("caps", caps);
         decodebin.pad_added.connect ((pad) => {
             if (pad.get_stream () != null && pad.get_stream ().stream_type == Gst.StreamType.VIDEO) {
-                pad.link (identity.get_static_pad ("sink"));
+                ((Gst.GhostPad)srcpad).set_target(pad);
             }
         });
-        add_pads (null, identity);
     }
 }
