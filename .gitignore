@@ -1,2 +1,4 @@
 /subprojects/blueprint-compiler
+/subprojects/neko_tee
+/subprojects/.wraplock
 .vscode

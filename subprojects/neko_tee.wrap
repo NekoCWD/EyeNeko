@@ -1,0 +1,4 @@
+[wrap-git]
+directory = neko_tee
+url = https://git.nekocwd.link/NekoCWD/LibNekoTee.git
+revision = master

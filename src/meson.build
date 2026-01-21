@@ -21,6 +21,7 @@ vapi_dir = meson.current_source_dir() / 'vapi'
 add_project_arguments(['--vapidir', vapi_dir], language: 'vala')
 eyeneko_deps = [
   config_dep,
+  dependency('nekotee-0', fallback: ['neko_tee', 'lib_dep'], default_options: ['default_library=static']),
   dependency('gtk4'),
   dependency('libadwaita-1', version: '>= 1.4'),
   dependency('gstreamer-1.0'),
