@@ -10,18 +10,6 @@ public class EyeNeko.Gstreamer : Object {
         }
     }
 
-    private static Gee.HashMap<CameraMode, Gst.Caps> mode_caps = new Gee.HashMap<CameraMode, Gst.Caps> ();
-    private static Gee.HashMap<CameraMode, int> mode_downscale = new Gee.HashMap<CameraMode, int> ();
-
-    static construct {
-        mode_caps[CameraMode.PHOTO] = new Gst.Caps.any ();
-        mode_caps[CameraMode.VIDEO] = new Gst.Caps.any ();
-        mode_caps[CameraMode.QR] = Gst.Caps.from_string ("video/x-raw, format=GRAY8");
-        mode_downscale[CameraMode.VIDEO] = int.parse (Env.get_variable_or ("DOWNSCALE_VIDEO", "640"));
-        mode_downscale[CameraMode.PHOTO] = int.parse (Env.get_variable_or ("DOWNSCALE_PHOTO", "0"));
-        mode_downscale[CameraMode.QR] = int.parse (Env.get_variable_or ("DOWNSCALE_QR", "640"));
-    }
-
     // Public properties
     public bool ready { get; set; default = false; }
     public CameraMode camera_mode { get; set; default = CameraMode.PHOTO; }
@@ -31,18 +19,11 @@ public class EyeNeko.Gstreamer : Object {
 
 
     // Private elements
-    private Gst.Pipeline pipeline = new Gst.Pipeline ("Eyeneko");
+    private Gst.Pipeline pipeline = new Gst.Pipeline ("EyeNeko");
     private NekoTee.Tee tee = new NekoTee.Tee ();
     private Elements.CameraSrc? camerasrc = null;
     private Gst.Element viewfinder = Gst.ElementFactory.make ("gtk4paintablesink", "paintablesink");
 
-    private Elements.ColorCorrectionMatrix color_correction_matrix = new Elements.ColorCorrectionMatrix ();
-    private Elements.Downscale downscale = new Elements.Downscale ();
-    private Gst.Element camera_convert_caps = Gst.ElementFactory.make ("capsfilter");
-    public Elements.QrScaner qr_scaner = new Elements.QrScaner ();
-    private Gst.Element rotate = Gst.ElementFactory.make ("glvideoflip");
-
-    // Other Fields
     public Gst.Device current_camera = null;
 
     private void set_up_caps (Gst.Device device) {
@@ -174,17 +155,6 @@ public class EyeNeko.Gstreamer : Object {
         pipeline.set_state (Gst.State.PLAYING);
     }
 
-    private void add_enc_profile () {
-        var cp = new Gst.PbUtils.EncodingContainerProfile (null, null, Gst.Caps.from_string ("video/quicktime"), null);
-        var vp = new Gst.PbUtils.EncodingVideoProfile (Gst.Caps.from_string ("video/x-h264"), null, null, 0);
-        if (bool.parse (Env.get_variable_or ("AUDIO_ENABLED", "true"))) {
-            var ap = new Gst.PbUtils.EncodingAudioProfile (Gst.Caps.from_string (Env.get_variable_or ("AUDIO_PROFILE", "audio/x-ac3")), null, null, 0);
-            cp.add_profile (ap);
-        }
-        cp.add_profile (vp);
-        // camerabin.set_property ("video-profile", cp);
-    }
-
     construct {
         var srt = new Gtk.SortListModel (available_caps, new Gtk.CustomSorter ((a, b) => FriendlyCaps.sort_func ((FriendlyCaps) a, (FriendlyCaps) b)));
         var fmt = Environment.get_variable ("ONLY_FORMAT");
@@ -206,28 +176,7 @@ public class EyeNeko.Gstreamer : Object {
         }
         is_initialised = true;
         viewfinder.bind_property ("paintable", this, "viewfinder-paintable", GLib.BindingFlags.SYNC_CREATE);
-        color_correction_matrix.red_in_red = 1f;
-        color_correction_matrix.blue_in_blue = 1f;
-        color_correction_matrix.green_in_green = 0.9f;
-
-        rotate.set ("method", int.parse (Env.get_variable_or ("ROTATE", "0")));
-
-        this.bind_property ("camera-mode", camera_convert_caps, "caps", BindingFlags.SYNC_CREATE, (b, s, ref d) => {
-            d = mode_caps[((CameraMode) s)];
-            return true;
-        });
-        this.bind_property ("camera-mode", downscale, "max-size", BindingFlags.SYNC_CREATE, (b, s, ref d) => {
-            d = mode_downscale[((CameraMode) s)];
-            return true;
-        });
-        this.bind_property ("camera-mode", qr_scaner, "enabled", BindingFlags.SYNC_CREATE, (b, s, ref d) => {
-            d = (CameraMode) s == CameraMode.QR;
-            return true;
-        });
-
         notify["camera-mode"].connect (() => start_stream_from (current_camera));
-
-        add_enc_profile ();
 
         Gdk.GLContext context;
         viewfinder_paintable.get ("gl-context", out context);
@@ -241,7 +190,7 @@ public class EyeNeko.Gstreamer : Object {
             tee.add_child (new NekoTee.TeeChild ("viewfinder", viewfinder));
         }
 
-        // camerabin.bus.add_watch (0, bus_callback);
+        pipeline.bus.add_watch (0, bus_callback);
     }
 
     public static void add_pads_to_bin (ref Gst.Bin bin, bool src = true, bool sink = true) {
@@ -252,21 +201,41 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     private bool bus_callback (Gst.Bus bus, Gst.Message message) {
+        var from = "IDK";
+        if (message.src is Gst.Element) {
+            var element = (Gst.Element) message.src;
+            from = element.name;
+        }
         switch (message.type) {
         case Gst.MessageType.WARNING :
             GLib.Error err;
             string debug;
             message.parse_warning (out err, out debug);
-            GLib.warning ("Warning: %s %s %s", err.message, err.domain.to_string (), debug);
+            warning (
+                "%s -> warning: %s %s %s",
+                from,
+                err.message,
+                err.domain.to_string (),
+                debug
+            );
             break;
         case Gst.MessageType.ERROR :
             GLib.Error err;
             string debug;
             message.parse_error (out err, out debug);
-            GLib.warning ("Error: %s %s %s", err.message, err.domain.to_string (), debug);
+            warning (
+                "%s -> error: %s %s %s",
+                from,
+                err.message,
+                err.domain.to_string (),
+                debug
+            );
             break;
         case Gst.MessageType.EOS :
-            GLib.warning ("End of stream\n");
+            warning (
+                "%s -> end of stream",
+                from
+            );
             break;
         case Gst.MessageType.STATE_CHANGED :
             Gst.State oldstate;
@@ -274,12 +243,17 @@ public class EyeNeko.Gstreamer : Object {
             Gst.State pending;
             message.parse_state_changed (out oldstate, out newstate,
                                          out pending);
+            if (message.src is Gst.Element) {
+                debug (
+                    "%s -> state changed: %s->%s:%s\n",
+                    from,
+                    oldstate.to_string (), newstate.to_string (),
+                    pending.to_string ()
+                );
+            } else {
+                warning ("WTF? State change not from element");
+            }
 
-            /*
-               GLib.message ("state changed: %s->%s:%s\n",
-                          oldstate.to_string (), newstate.to_string (),
-                          pending.to_string ());
-             */
             break;
         case Gst.MessageType.ELEMENT:
             break;
@@ -290,8 +264,7 @@ public class EyeNeko.Gstreamer : Object {
         return true;
     }
 
-    private Gstreamer () {
-    }
+    private Gstreamer () {}
 
     private static Gstreamer _instance = null;
     public static Gstreamer instance {

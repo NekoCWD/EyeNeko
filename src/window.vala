@@ -120,10 +120,10 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
             var data = (Gtk.StringObject) item.item;
             row.set_qr (data.string);
         });
-        Gstreamer.instance.qr_scaner.new_qr.connect ((qr) => {
-            qr_list.append (qr);
-            qr_dialog.present (this);
-        });
+        // Gstreamer.instance.qr_scaner.new_qr.connect ((qr) => {
+        // qr_list.append (qr);
+        // qr_dialog.present (this);
+        // });
     }
 
     private void shot () {
