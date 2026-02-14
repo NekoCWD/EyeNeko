@@ -47,7 +47,7 @@ public class EyeNeko.Gstreamer : Object {
     private Gst.Element rotate = Gst.ElementFactory.make ("glvideoflip");
 
     // Other Fields
-    public Camera current_camera = null;
+    public Gst.Device current_camera = null;
 
     private void set_up_caps (Gst.Device device) {
         var caps = device.get_caps ();
@@ -61,31 +61,30 @@ public class EyeNeko.Gstreamer : Object {
         caps_selecton_model.selected = 0;
     }
 
-    public class Camera : Object {
-        public string name { owned get { return device.display_name; } }
-        public Gst.Device device { get; construct; }
-
-        private Camera (Gst.Device device) {
-            Object (device : device);
-        }
-
-        private static Camera[] cameras = null;
-        public static Camera[] get_all () {
-            if (cameras == null) {
-                cameras = new Camera[0];
-                var pwprovider = Gst.DeviceProviderFactory.get_by_name (
-                    Env.get_variable_or ("CAM_PROVIDER", "pipewiredeviceprovider")
-                );
-                pwprovider.start ();
-                foreach (var device in pwprovider.get_devices ()) {
-                    if (device.has_classes ("Video/Source")) {
-                        cameras += new Camera (device);
-                        message ("Camera appended %s:", device.display_name);
-                    }
+    /**
+     * Cameras could be lazy-loaded somehow
+     */
+    private static Gst.Device[] cameras = null;
+    /**
+     * Get all the cameras of default deviceprovider
+     *
+     * To treat device as camera, it should have Video/Source class
+     */
+    public static Gst.Device[] get_cameras () {
+        if (cameras == null) {
+            cameras = new Gst.Device[0];
+            var pwprovider = Gst.DeviceProviderFactory.get_by_name (
+                Env.get_variable_or ("CAM_PROVIDER", "pipewiredeviceprovider")
+            );
+            pwprovider.start ();
+            foreach (var device in pwprovider.get_devices ()) {
+                if (device.has_classes ("Video/Source")) {
+                    cameras += device;
+                    message ("Camera appended %s:", device.display_name);
                 }
             }
-            return cameras;
         }
+        return cameras;
     }
 
     public void start_capture () {
@@ -137,10 +136,10 @@ public class EyeNeko.Gstreamer : Object {
         return bin;
     }
 
-    public void start_stream_from (Camera? camera) {
+    public void start_stream_from (Gst.Device? camera) {
         info ("Stopping stream");
         pipeline.set_state (Gst.State.NULL);
-        info ("Trying to start stream from %s", camera ? .name ?? "NULL");
+        info ("Trying to start stream from %s", camera ? .display_name ?? "NULL");
 
         if (camera == null) {
             info ("Won't start stream: camera is null");
@@ -149,7 +148,7 @@ public class EyeNeko.Gstreamer : Object {
         if (current_camera != camera) {
             info ("Won't start stream: camera switched -> changing caps");
             current_camera = camera;
-            set_up_caps (camera.device);
+            set_up_caps (camera);
             return;
         }
 
@@ -164,7 +163,7 @@ public class EyeNeko.Gstreamer : Object {
             pipeline.remove (camerasrc);
         }
         camerasrc = new Elements.CameraSrc (
-            camera.device.create_element (null),
+            camera.create_element (null),
             Gst.Caps.from_string (
                 Env.get_variable_or (
                     "CAM_CAPS", caps.to_caps ().to_string ()
@@ -270,10 +269,10 @@ public class EyeNeko.Gstreamer : Object {
             message.parse_error (out err, out debug);
             GLib.warning ("Error: %s %s %s", err.message, err.domain.to_string (), debug);
             break;
-        case Gst.MessageType.EOS:
+        case Gst.MessageType.EOS :
             GLib.warning ("End of stream\n");
             break;
-        case Gst.MessageType.STATE_CHANGED:
+        case Gst.MessageType.STATE_CHANGED :
             Gst.State oldstate;
             Gst.State newstate;
             Gst.State pending;

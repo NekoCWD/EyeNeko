@@ -43,10 +43,11 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
 
     public string camera_path { get; set; default = "Unknown"; }
     public string current_caps { get; set; default = "Unknown"; }
+
     private void setup_video_source_changer () {
         notify["camera-path"].connect (() => {
-            foreach (var camera in Gstreamer.Camera.get_all ()) {
-                if (camera.device.get_path_string () == camera_path) {
+            foreach (var camera in Gstreamer.get_cameras ()) {
+                if (camera.get_path_string () == camera_path) {
                     info ("Switching to: %s", camera.name);
                     Gstreamer.instance.start_stream_from (camera);
                     return;
@@ -55,17 +56,17 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
             warning ("Camera switching: Camera not found: %s", camera_path);
         });
 
-        if (Gstreamer.Camera.get_all ().length > 0)
-            camera_path = Gstreamer.Camera.get_all ()[int.parse (Env.get_variable_or ("CAM_N", "0"))].device.get_path_string ();
+        if (Gstreamer.get_cameras ().length > 0)
+            camera_path = Gstreamer.get_cameras ()[int.parse (Env.get_variable_or ("CAM_N", "0"))].get_path_string ();
 
         var change_video_source_action = new PropertyAction ("change-video-source", this, "camera-path");
         add_action (change_video_source_action);
 
 
         var sources_menu = new Menu ();
-        foreach (var camera in Gstreamer.Camera.get_all ()) {
-            var item = new MenuItem (camera.name, null);
-            item.set_action_and_target_value ("win.change-video-source", camera.device.get_path_string ());
+        foreach (var camera in Gstreamer.get_cameras ()) {
+            var item = new MenuItem (camera.display_name, null);
+            item.set_action_and_target_value ("win.change-video-source", camera.get_path_string ());
             sources_menu.append_item (item);
         }
 
