@@ -47,7 +47,7 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
         notify["camera-path"].connect (() => {
             foreach (var camera in Gstreamer.Camera.get_all ()) {
                 if (camera.device.get_path_string () == camera_path) {
-                    message ("Switching to: %s", camera.name);
+                    info ("Switching to: %s", camera.name);
                     Gstreamer.instance.start_stream_from (camera);
                     return;
                 }
