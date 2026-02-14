@@ -132,14 +132,12 @@ public class EyeNeko.Window : Adw.ApplicationWindow {
             qr_dialog.present (this);
             break;
         case Gstreamer.CameraMode.VIDEO:
-            if (Gstreamer.instance.ready){
-                message("Ready");
+            if (Gstreamer.instance.ready) {
+                message ("Ready");
                 Gstreamer.instance.start_capture ();
-
-            }
-            else {
-                message("Not ready");
-Gstreamer.instance.stop_capture ();
+            } else {
+                message ("Not ready");
+                Gstreamer.instance.stop_capture ();
             }
             break;
         default:
@@ -155,7 +153,7 @@ Gstreamer.instance.stop_capture ();
             { "shot", this.shot }
         }, this);
 
-        Gstreamer.instance.bind_property ("viewfinder-paintable", viewfinder, "paintable", BindingFlags.SYNC_CREATE);
+        Gstreamer.instance.viewfinder.bind_property ("paintable", viewfinder, "paintable", BindingFlags.SYNC_CREATE);
 
         setup_video_source_changer ();
         setup_caps_changer ();

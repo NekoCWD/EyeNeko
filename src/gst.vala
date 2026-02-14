@@ -13,7 +13,6 @@ public class EyeNeko.Gstreamer : Object {
     // Public properties
     public bool ready { get; set; default = true; }
     public CameraMode camera_mode { get; set; default = CameraMode.PHOTO; }
-    public Gdk.Paintable viewfinder_paintable { get; set; }
     public ListStore available_caps = new ListStore (typeof (FriendlyCaps));
     public Gtk.SingleSelection caps_selecton_model = new Gtk.SingleSelection (null);
 
@@ -22,7 +21,6 @@ public class EyeNeko.Gstreamer : Object {
     private Gst.Pipeline pipeline = new Gst.Pipeline ("EyeNeko");
     private NekoTee.Tee tee = new NekoTee.Tee () { name = "Tee" };
     private Elements.CameraSrc? camerasrc = null;
-    private Gst.Element viewfinder = Gst.ElementFactory.make ("gtk4paintablesink", "ViewFinder");
 
     public Gst.Device current_camera = null;
 
@@ -30,9 +28,10 @@ public class EyeNeko.Gstreamer : Object {
      * TODO: Use right location
      * TODO: Add customization
      */
-    private Elements.Capture video_capture = new Elements.Capture (
+    private Elements.Capture video_capture = new Elements.Capture.from_string (
         "videoconvert ! x264enc ! qtmux ! filesink location=xyz.mp4 name=filesinkzzz",
         "VideoCapture") { detach_on_eos = true, };
+    public Elements.Viewfinder viewfinder { get; set; default = new Elements.Viewfinder (); }
 
 
     private void set_up_caps (Gst.Device device) {
@@ -143,6 +142,7 @@ public class EyeNeko.Gstreamer : Object {
     construct {
         /* Add video capture pipeline */
         tee.add_child (video_capture, false);
+        tee.add_child (viewfinder, true);
         video_capture.set_locked_state (true);
 
         var srt = new Gtk.SortListModel (available_caps, new Gtk.CustomSorter ((a, b) => FriendlyCaps.sort_func ((FriendlyCaps) a, (FriendlyCaps) b)));
@@ -164,21 +164,7 @@ public class EyeNeko.Gstreamer : Object {
             return;
         }
         is_initialised = true;
-        viewfinder.bind_property ("paintable", this, "viewfinder-paintable", GLib.BindingFlags.SYNC_CREATE);
         notify["camera-mode"].connect (() => start_stream_from (current_camera));
-
-        Gdk.GLContext context;
-        viewfinder_paintable.get ("gl-context", out context);
-        if (context != null) {
-            message ("GL supported <3");
-            var gl_sink = Gst.ElementFactory.make ("glsinkbin");
-            gl_sink.set_property ("sink", viewfinder);
-            tee.add_child (new NekoTee.TeeChild ("viewfinder", gl_sink));
-        } else {
-            warning ("GL NOT supported. Viewfinder will be slow as shit");
-            tee.add_child (new NekoTee.TeeChild ("viewfinder", viewfinder));
-        }
-
         pipeline.bus.add_watch (0, bus_callback);
     }
 

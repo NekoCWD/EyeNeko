@@ -35,18 +35,21 @@ public class EyeNeko.Elements.Capture : NekoTee.TeeChild {
     }
     public bool detach_on_eos { get; set; default = false; }
 
-    static void bin2sink (ref Gst.Bin bin) {
+    static void bin2sink (Gst.Bin bin) {
         var first_element = (Gst.Element) bin.get_child_by_index (bin.get_children_count () - 1);
         bin.add_pad (new Gst.GhostPad ("sink", first_element.get_static_pad ("sink")));
     }
 
-    public Capture (string pipeline, string name) {
-        message_forward = true;
+    public Capture (Gst.Bin bin, string name) {
+        bin.name = "%s Pipeline".printf (name);
+        bin2sink (bin);
+        base (name, bin);
+    }
+
+    public Capture.from_string (string pipeline, string name) {
         // TODO: add error handling
         var bin = (Gst.Bin) Gst.parse_launch (pipeline);
-        bin2sink (ref bin);
-        bin.name = "%s Pipeline".printf (name);
-        base (name, bin);
+        this(bin, name);
     }
 
     public void send_eos () {

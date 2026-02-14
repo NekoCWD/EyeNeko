@@ -12,6 +12,7 @@ eyeneko_sources = [
     'elements/color_correction_matrix.vala',
     'elements/qr_scaner.vala',
     'elements/capture.vala',
+    'elements/viewfinder.vala',
     'ui/preferences.vala',
     'ui/caps-row.vala',
     'ui/qr-row.vala',
