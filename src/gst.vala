@@ -5,10 +5,6 @@ public class EyeNeko.Gstreamer : Object {
         PHOTO,
         QR;
 
-        public string to_string () {
-            return ((EnumClass) typeof (CameraMode).class_ref ()).get_value (this).value_nick;
-        }
-
         public static CameraMode parse (string data) {
             return ((EnumClass) typeof (CameraMode).class_ref ()).get_value_by_nick (data) ? .value ?? 0;
         }
