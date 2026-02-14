@@ -11,7 +11,7 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     // Public properties
-    public bool ready { get; set; default = false; }
+    public bool ready { get; set; default = true; }
     public CameraMode camera_mode { get; set; default = CameraMode.PHOTO; }
     public Gdk.Paintable viewfinder_paintable { get; set; }
     public ListStore available_caps = new ListStore (typeof (FriendlyCaps));
@@ -20,11 +20,20 @@ public class EyeNeko.Gstreamer : Object {
 
     // Private elements
     private Gst.Pipeline pipeline = new Gst.Pipeline ("EyeNeko");
-    private NekoTee.Tee tee = new NekoTee.Tee ();
+    private NekoTee.Tee tee = new NekoTee.Tee () { name = "Tee" };
     private Elements.CameraSrc? camerasrc = null;
-    private Gst.Element viewfinder = Gst.ElementFactory.make ("gtk4paintablesink", "paintablesink");
+    private Gst.Element viewfinder = Gst.ElementFactory.make ("gtk4paintablesink", "ViewFinder");
 
     public Gst.Device current_camera = null;
+
+    /*
+     * TODO: Use right location
+     * TODO: Add customization
+     */
+    private Elements.Capture video_capture = new Elements.Capture (
+        "videoconvert ! x264enc ! qtmux ! filesink location=xyz.mp4 name=filesinkzzz",
+        "VideoCapture") { detach_on_eos = true, };
+
 
     private void set_up_caps (Gst.Device device) {
         var caps = device.get_caps ();
@@ -65,38 +74,14 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     public void start_capture () {
-        var file_dir = Environment.get_user_special_dir (
-            camera_mode == CameraMode.VIDEO ? UserDirectory.VIDEOS : UserDirectory.PICTURES
-        );
-        var dir = File.new_build_filename (file_dir, "EyeNeko");
-
-        try {
-            dir.make_directory ();
-        } catch (IOError.EXISTS err) {
-            // Ignore
-        } catch (Error err) {
-            warning (
-                "Failed to create dirrectory `%s`: %s",
-                dir.get_path (),
-                err.message
-            );
-        }
-
-        var time = new DateTime.now ();
-        var formated = time.format ("%Y-%m-%d-%H-%M-%S");
-        var filename = "%s.%s".printf (
-            formated,
-            camera_mode == CameraMode.VIDEO ? "mp4" : "jpeg"
-        );
-        var location = Path.build_filename (dir.get_path (), filename);
-        message ("Capturing %s", location);
-        // camerabin.set_property ("location", location);
-        // Gst.Debug.bin_to_dot_file (camerabin, Gst.DebugGraphDetails.ALL, current_camera.device.display_name);
-        // Signal.emit_by_name (camerabin, "start-capture");
+        video_capture.attach ();
+        ready = false;
     }
 
     public void stop_capture () {
-        // Signal.emit_by_name (camerabin, "stop-capture");
+        message ("=== Stopping capture");
+        video_capture.send_eos ();
+        ready = true;
     }
 
     public Gst.Bin pipe_elements (string? name = null, ...) {
@@ -151,11 +136,15 @@ public class EyeNeko.Gstreamer : Object {
         camerasrc.link (tee);
 
         debug ("Negotiated caps: %s", caps.to_caps ().to_string ());
-        message ("Starting from %s (%s)", camera.name, caps.to_string ());
+        message ("Starting from %s (%s)", camera.display_name, caps.to_string ());
         pipeline.set_state (Gst.State.PLAYING);
     }
 
     construct {
+        /* Add video capture pipeline */
+        tee.add_child (video_capture, false);
+        video_capture.set_locked_state (true);
+
         var srt = new Gtk.SortListModel (available_caps, new Gtk.CustomSorter ((a, b) => FriendlyCaps.sort_func ((FriendlyCaps) a, (FriendlyCaps) b)));
         var fmt = Environment.get_variable ("ONLY_FORMAT");
         if (fmt != null) {
@@ -237,28 +226,8 @@ public class EyeNeko.Gstreamer : Object {
                 from
             );
             break;
-        case Gst.MessageType.STATE_CHANGED :
-            Gst.State oldstate;
-            Gst.State newstate;
-            Gst.State pending;
-            message.parse_state_changed (out oldstate, out newstate,
-                                         out pending);
-            if (message.src is Gst.Element) {
-                debug (
-                    "%s -> state changed: %s->%s:%s\n",
-                    from,
-                    oldstate.to_string (), newstate.to_string (),
-                    pending.to_string ()
-                );
-            } else {
-                warning ("WTF? State change not from element");
-            }
 
-            break;
-        case Gst.MessageType.ELEMENT:
-            break;
-        default:
-            break;
+            default : break;
         }
 
         return true;
