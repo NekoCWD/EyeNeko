@@ -63,17 +63,19 @@ public class EyeNeko.Gstreamer : Object {
 
     public class Camera : Object {
         public string name { owned get { return device.display_name; } }
-        public Gst.Device device { get; }
+        public Gst.Device device { get; construct; }
 
         private Camera (Gst.Device device) {
-            _device = device;
+            Object (device : device);
         }
 
         private static Camera[] cameras = null;
         public static Camera[] get_all () {
             if (cameras == null) {
                 cameras = new Camera[0];
-                var pwprovider = Gst.DeviceProviderFactory.get_by_name (Env.get_variable_or ("CAM_PROVIDER", "pipewiredeviceprovider"));
+                var pwprovider = Gst.DeviceProviderFactory.get_by_name (
+                    Env.get_variable_or ("CAM_PROVIDER", "pipewiredeviceprovider")
+                );
                 pwprovider.start ();
                 foreach (var device in pwprovider.get_devices ()) {
                     if (device.has_classes ("Video/Source")) {
@@ -87,7 +89,9 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     public void start_capture () {
-        var file_dir = Environment.get_user_special_dir (camera_mode == CameraMode.VIDEO ? UserDirectory.VIDEOS : UserDirectory.PICTURES);
+        var file_dir = Environment.get_user_special_dir (
+            camera_mode == CameraMode.VIDEO ? UserDirectory.VIDEOS : UserDirectory.PICTURES
+        );
         var dir = File.new_build_filename (file_dir, "EyeNeko");
 
         try {
@@ -95,12 +99,19 @@ public class EyeNeko.Gstreamer : Object {
         } catch (IOError.EXISTS err) {
             // Ignore
         } catch (Error err) {
-            warning ("Failed to create dirrectory `%s`: %s", dir.get_path (), err.message);
+            warning (
+                "Failed to create dirrectory `%s`: %s",
+                dir.get_path (),
+                err.message
+            );
         }
 
         var time = new DateTime.now ();
         var formated = time.format ("%Y-%m-%d-%H-%M-%S");
-        var filename = "%s.%s".printf (formated, camera_mode == CameraMode.VIDEO ? "mp4" : "jpeg");
+        var filename = "%s.%s".printf (
+            formated,
+            camera_mode == CameraMode.VIDEO ? "mp4" : "jpeg"
+        );
         var location = Path.build_filename (dir.get_path (), filename);
         message ("Capturing %s", location);
         // camerabin.set_property ("location", location);
@@ -127,32 +138,45 @@ public class EyeNeko.Gstreamer : Object {
     }
 
     public void start_stream_from (Camera? camera) {
-        message ("StartStream called");
+        info ("Stopping stream");
         pipeline.set_state (Gst.State.NULL);
+        info ("Trying to start stream from %s", camera ? .name ?? "NULL");
 
         if (camera == null) {
-            message ("Camera is null. Stoping stream");
+            info ("Won't start stream: camera is null");
             return;
         }
         if (current_camera != camera) {
-            message ("Camera switched. Changing caps");
+            info ("Won't start stream: camera switched -> changing caps");
             current_camera = camera;
             set_up_caps (camera.device);
             return;
         }
 
-        var caps = ((FriendlyCaps) caps_selecton_model.selected_item).to_caps ().to_string ();
+        var caps = (FriendlyCaps) caps_selecton_model.selected_item;
+        if (caps == null) {
+            info ("Won't start stream: caps not selected");
+            return;
+        }
         if (camerasrc != null) {
             camerasrc.unlink (tee);
             camerasrc.set_state (Gst.State.NULL);
             pipeline.remove (camerasrc);
         }
-        camerasrc = new Elements.CameraSrc (camera.device.create_element (null), Gst.Caps.from_string (Env.get_variable_or ("CAM_CAPS", caps)));
+        camerasrc = new Elements.CameraSrc (
+            camera.device.create_element (null),
+            Gst.Caps.from_string (
+                Env.get_variable_or (
+                    "CAM_CAPS", caps.to_caps ().to_string ()
+                )
+            )
+        );
         pipeline.add (camerasrc);
         camerasrc.link (tee);
 
+        debug ("Negotiated caps: %s", caps.to_caps ().to_string ());
+        message ("Starting from %s (%s)", camera.name, caps.to_string ());
         pipeline.set_state (Gst.State.PLAYING);
-        message ("Started stream with %s", caps);
     }
 
     private void add_enc_profile () {
@@ -175,8 +199,6 @@ public class EyeNeko.Gstreamer : Object {
         } else
             caps_selecton_model.set_model (srt);
         caps_selecton_model.autoselect = false;
-        caps_selecton_model.notify["selected-item"].connect (() => message ("Caps selected for camera %s", current_camera.name));
-
         caps_selecton_model.notify["selected-item"].connect (() => start_stream_from (current_camera));
         pipeline.add (tee);
     }
